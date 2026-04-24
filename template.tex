@@ -1,0 +1,126 @@
+\documentclass[runningheads]{llncs}
+
+\usepackage{amsmath}
+\usepackage{lipsum} 
+\usepackage{booktabs} % For pretty tables
+\usepackage{caption} % For caption spacing
+\usepackage{subcaption} % For sub-figures
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\usepackage[all]{nowidow}
+\usepackage[utf8]{inputenc}
+\usepackage{tikz}
+\usetikzlibrary{er,positioning,bayesnet}
+\usepackage{multicol}
+\usepackage{algpseudocode,algorithm,algorithmicx}
+\usepackage{minted}
+\usepackage{hyperref}
+\usepackage[inline]{enumitem} % Horizontal lists
+
+\newcommand{\card}[1]{\left\vert{#1}\right\vert}
+\newcommand*\Let[2]{\State #1 $\gets$ #2}
+\definecolor{blue}{HTML}{1F77B4}
+\definecolor{orange}{HTML}{FF7F0E}
+\definecolor{green}{HTML}{2CA02C}
+
+\pgfplotsset{compat=1.14}
+
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.15}
+\renewcommand{\floatpagefraction}{0.8}
+\renewcommand{\textfraction}{0.1}
+\setlength{\floatsep}{3pt plus 1pt minus 1pt}
+\setlength{\textfloatsep}{3pt plus 1pt minus 1pt}
+\setlength{\intextsep}{3pt plus 1pt minus 1pt}
+\setlength{\abovecaptionskip}{2pt plus 1pt minus 1pt}
+
+\begin{document}
+
+% TITLE 
+\title{TITLE}
+
+% AUTHOR LIST
+\author{Author1\inst{1} \and
+Author2\inst{2}}
+
+% INSTITUTE
+\institute{University of Michigan, Ann Arbor, MI}
+
+% MAKE THE TITLE ON THE PAGE
+\maketitle   
+
+% ABSTRACT
+% \begin{abstract}
+% your abstract here
+% \end{abstract}
+
+% PAPER SECTIONS
+
+\section{Introduction}
+You can make in text citations for anything in the bibliography (at the bottom of the document) like this \cite{Turing}. 
+
+
+\section{Methods}
+
+
+\textbf{Example Equation}. Below is Equation \ref{eq1}:
+
+\begin{equation}\label{eq1}
+    \mathbf{A} = \mathbf{U \Sigma V^{\text{T}}}
+\end{equation}
+
+\noindent \textbf{Example Multi-line Equation}. An aligned multi-line equation is shown in Equation \ref{eq2}:
+
+\begin{align}\label{eq2}
+    \mathbf{\dot{x}} &= \mu (\mathbf{x} - \frac{1}{3}\mathbf{x}^3 - \mathbf{y} ) \\
+    \mathbf{\dot{y}} &= \frac{1}{\mu} \mathbf{x} 
+\end{align}
+
+\noindent You can also embed notation in the text like this: $\mathbf{Ax} = \lamda \mathbf{x}$.
+
+\clearpage % forces this section to the next page
+\section{Results}
+
+\subsection{Example Subsection: Figures}
+You can add figures to your document, as shown in Figure \ref{fig1}.
+
+\begin{figure}[!tbh]
+    \centering
+    \includegraphics[scale=0.4]{figures/SVD_figure.png}
+    \caption{\textbf{Example Figure.} Some other caption stuff here.}
+    \label{fig1}
+\end{figure}
+
+
+\subsection{Example Subsection: Tables}
+
+\bigskip % add some space after the figure
+\noindent Tables may also be defined:
+
+\begin{table}[!tbh]
+    \centering
+    \begin{tabular}{c|c}
+         Input & $\mu x + 1$  \\
+         \hline
+         1 & 3 \\ 
+         2 & 5 \\ 
+         3 & 7 \\ 
+         4 & 9  
+    \end{tabular}
+    \caption{\textbf{Example Table.} Other caption stuff.}
+    \label{tab1}
+\end{table}
+
+
+\section{Conclusion}
+
+
+% REFERENCES
+\begin{thebibliography}{}
+\bibitem{Turing}
+A. M. Turing, “The chemical basis of morphogenesis,” Bltn Mathcal Biology, vol. 52, no. 1, pp. 153–197, Jan. 1990, doi: 10.1007/BF02459572.
+
+
+\end{thebibliography}
+\end{document}
