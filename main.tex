@@ -50,31 +50,21 @@ Factor Structure, Sectoral Geometry, and Market Efficiency}
 \maketitle
 
 \begin{abstract}
-We apply spectral and data-driven methods to the daily returns of 20 large-cap
-U.S.\ equities (2020--2026) to characterise the mathematical structure of the stock
-market and test whether that structure enables temporal prediction.
-Singular Value Decomposition (SVD) reveals that the return cross-section is
-approximately rank-4: a single \emph{market factor} captures 44.6\% of variance and
-correlates at $r = 0.883$ with the S\&P~500 index, while a random-matrix noise
-threshold confirms that only four components represent genuine signal.
-Classical Multidimensional Scaling (MDS) and Spectral Clustering then show that
-the underlying structure is \emph{sectoral}: without any sector labels, the
-algorithms recover the four known sectors (Technology, Finance, Healthcare, Energy)
-with perfect accuracy.
-Dynamic Mode Decomposition (DMD) reveals why temporal prediction remains
-elusive: all DMD eigenvalues lie deep inside the unit circle, indicating modes that
-decay within a single trading day, and a trained model performs \emph{worse} than
-simply predicting no change.
-Three complementary analyses deepen this picture: GARCH(1,1) modelling shows that
-while returns are unpredictable, their conditional variance is strongly persistent
-($\alpha+\beta = 0.962$) and can be forecast with 22.5\% lower error than the
-historical mean; Granger causality tests on all 380 directed stock pairs uncover a
-sparse but significant information-flow network; and a three-state Hidden Markov
-Model identifies distinct volatility regimes that further corroborate second-moment
-predictability.
-Together, these results reconcile an apparent paradox—the market is genuinely
-low-dimensional in \emph{cross-section} yet genuinely unpredictable in
-\emph{time}—while revealing that \emph{volatility}, unlike returns, is forecastable.
+We apply spectral and data-driven methods to daily returns of 20 large-cap
+U.S.\ equities (2020--2026) to characterise the mathematical structure of
+equity markets.
+SVD reveals that the return cross-section is dominated by a single market factor
+and carries only four statistically genuine components.
+Classical MDS and Spectral Clustering recover the four known sectors without
+any sector labels being supplied.
+Dynamic Mode Decomposition shows that returns are temporally unpredictable:
+a trained linear model performs \emph{worse} than simply predicting no change.
+Complementary GARCH modelling and a Hidden Markov Model reveal that while returns
+are unpredictable, \emph{volatility} is persistent and forecastable, with distinct
+high- and low-volatility regimes identifiable from past data.
+These results reconcile an apparent paradox: the market is genuinely
+low-dimensional across stocks yet genuinely unpredictable in time—a precise
+mathematical signature of market efficiency.
 \end{abstract}
 
 
@@ -147,7 +137,8 @@ and recover $\mathbf{A}$ via DMD \citep{kutz2016dynamic}.
 Training uses 2020--2022 (755 days); testing uses 2023--2026 (830 days).
 The DMD operator is $\mathbf{A} = \mathbf{X}_2 \mathbf{X}_1^\dagger$ estimated
 through a rank-$r$ truncated SVD of the snapshot matrix $\mathbf{X}_1$.
-We evaluate one-step-ahead forecasts against a zero baseline (predict no change).
+We evaluate one-step-ahead forecasts using root mean squared error (RMSE)
+against a zero baseline (predict no change).
 
 \paragraph{GARCH Volatility Modelling.}
 We fit a GARCH(1,1) model \citep{bollerslev1986generalized} to S\&P~500 daily
@@ -155,16 +146,6 @@ log-returns, with one-step-ahead conditional variance $h_t = \omega + \alpha r_{
 We compare the RMSE of $\hat\sigma_t = \sqrt{h_t}$ against realised absolute returns
 $|r_t|$ on the held-out 2023--2026 period, using the unconditional mean $\bar\sigma$
 as a baseline.
-
-\paragraph{Granger Causality.}
-For all $20 \times 19 = 380$ ordered stock pairs $(i,j)$ we conduct a lag-1
-Granger causality $F$-test \citep{granger1969investigating}: the null hypothesis is
-that lagged returns of stock $i$ carry no incremental predictive power for stock $j$
-beyond $j$'s own lag.
-$p$-values are corrected for multiple comparisons using both Benjamini--Hochberg
-false-discovery rate ($q = 0.05$) and Bonferroni methods.
-Significant edges form a directed causality network visualised with a
-force-directed layout.
 
 \paragraph{Hidden Markov Model.}
 We fit a three-state Gaussian HMM \citep{hamilton1989new} to the bivariate daily
@@ -324,44 +305,6 @@ The implication is precise: the Efficient Market Hypothesis constrains the
 predictability of \emph{prices} (first moment), not \emph{risk} (second moment).
 
 
-\subsection{Granger Causality: A Sparse Information-Flow Network}
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\linewidth]{figures/fig5_granger.pdf}
-  \caption{\textbf{(a)} Heatmap of Granger causality $F$-statistics (row $i$
-  $\to$ column $j$: does lagged stock $i$ improve the forecast of stock $j$?).
-  Energy-row entries tend to be large, suggesting energy prices lead other sectors.
-  \textbf{(b)} Directed Granger network after FDR correction at $q = 0.05$
-  (229 edges out of 380 tested pairs).
-  Technology stocks occupy hub positions, receiving many incoming edges.}
-  \label{fig:granger}
-\end{figure}
-
-Although returns are individually unpredictable, cross-stock lead-lag relationships
-may still exist.
-We test all $20 \times 19 = 380$ directed pairs for Granger causality
-\citep{granger1969investigating} at lag 1: for each ordered pair $(i,j)$,
-an $F$-test compares the restricted model (only $j$'s own lag) against the
-unrestricted model (lags of both $i$ and $j$).
-
-After Benjamini--Hochberg false-discovery-rate correction at $q = 0.05$,
-229 of the 380 pairs show statistically significant causality (Figure~\ref{fig:granger}b).
-Applying the stricter Bonferroni correction reduces this to 60 edges,
-reflecting the high multiple-testing burden.
-The heatmap (Figure~\ref{fig:granger}a) reveals that rows corresponding to Energy
-stocks tend to carry the largest $F$-statistics,
-suggesting that energy-sector movements lead other sectors at a one-day horizon—
-consistent with the role of commodity prices as macroeconomic signals.
-
-Importantly, statistical Granger causality does not imply exploitable
-\emph{economic} causality.
-In a liquid, efficient market any predictive edge is rapidly arbitraged away once
-transaction costs are included.
-The network therefore describes information propagation pathways, not
-investible alpha.
-
-
 \subsection{Hidden Markov Model: Identifying Volatility Regimes}
 
 \begin{figure}[t]
@@ -446,17 +389,10 @@ but whose return dispersions differ by a factor of three.
 The Efficient Market Hypothesis therefore forbids first-moment predictability,
 not second-moment predictability.
 
-\emph{Cross-stock information flow}, captured by Granger causality, reveals a
-sparse directed network of lead-lag relationships.
-While statistically significant after multiple-testing correction, these edges
-describe information propagation pathways rather than investible opportunities:
-in a liquid market, exploiting any single edge requires transactions that
-eliminate the edge's edge.
-
-Taken together, the six analyses provide a coherent, multi-angle characterisation:
+Taken together, the five analyses provide a coherent, multi-angle characterisation:
 the market is genuinely low-dimensional across stocks (SVD, MDS, Spectral Clustering),
 genuinely unpredictable in expected returns (DMD), yet genuinely structured in risk
-(GARCH, HMM) and information propagation (Granger).
+(GARCH, HMM).
 
 \bibliographystyle{splncs04}
 \bibliography{reference}
