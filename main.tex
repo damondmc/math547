@@ -1,0 +1,286 @@
+\documentclass[runningheads]{llncs}
+
+\usepackage{amsmath}
+\usepackage{lipsum}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{amssymb}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\usepackage[square,numbers]{natbib}
+\usepackage[all]{nowidow}
+\usepackage[utf8]{inputenc}
+\usepackage{tikz}
+\usetikzlibrary{er,positioning,bayesnet}
+\usepackage{multicol}
+\usepackage{algpseudocode,algorithm,algorithmicx}
+\usepackage{minted}
+\usepackage{hyperref}
+\usepackage[inline]{enumitem}
+\usepackage[margin=1.2in]{geometry}
+
+\newcommand{\card}[1]{\left\vert{#1}\right\vert}
+\newcommand*\Let[2]{\State #1 $\gets$ #2}
+\definecolor{blue}{HTML}{1F77B4}
+\definecolor{orange}{HTML}{FF7F0E}
+\definecolor{green}{HTML}{2CA02C}
+
+\pgfplotsset{compat=1.14}
+
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.15}
+\renewcommand{\floatpagefraction}{0.8}
+\renewcommand{\textfraction}{0.1}
+\setlength{\floatsep}{3pt plus 1pt minus 1pt}
+\setlength{\textfloatsep}{3pt plus 1pt minus 1pt}
+\setlength{\intextsep}{3pt plus 1pt minus 1pt}
+\setlength{\abovecaptionskip}{2pt plus 1pt minus 1pt}
+
+\begin{document}
+
+\title{Spectral Analysis of U.S.\ Equity Markets:\\
+Factor Structure, Sectoral Geometry, and Market Efficiency}
+
+\author{Damon H.\,T.\ Cheung}
+% \email{damoncht@umich.edu}
+\institute{University of Michigan, Ann Arbor, MI 48109}
+
+\maketitle
+
+\begin{abstract}
+We apply spectral and data-driven methods to the daily returns of 20 large-cap
+U.S.\ equities (2020--2026) to characterise the mathematical structure of the stock
+market and test whether that structure enables temporal prediction.
+Singular Value Decomposition (SVD) reveals that the return cross-section is
+approximately rank-4: a single \emph{market factor} captures 44.6\% of variance and
+correlates at $r = 0.883$ with the S\&P~500 index, while a random-matrix noise
+threshold confirms that only four components represent genuine signal.
+Classical Multidimensional Scaling (MDS) and Spectral Clustering then show that
+the underlying structure is \emph{sectoral}: without any sector labels, the
+algorithms recover the four known sectors (Technology, Finance, Healthcare, Energy)
+with perfect accuracy.
+Finally, Dynamic Mode Decomposition (DMD) reveals why temporal prediction remains
+elusive: all DMD eigenvalues lie deep inside the unit circle, indicating modes that
+decay within a single trading day, and a trained model performs \emph{worse} than
+simply predicting no change.
+These results reconcile an apparent paradox—the market is genuinely low-dimensional
+in \emph{cross-section} yet genuinely unpredictable in \emph{time}—and provide a
+direct mathematical signature of the Efficient Market Hypothesis.
+\end{abstract}
+
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Introduction}
+% ──────────────────────────────────────────────────────────────────────────────
+
+The U.S.\ equity market, with more than \$40 trillion in market capitalisation and
+thousands of professional analysts, is one of the most intensively studied dynamical
+systems in the world—and one of the most difficult to predict \citep{fama1970efficient}.
+This difficulty might suggest a maximally complex system, yet practitioners have long
+known that most stocks move together: when the broad market falls, individual
+stocks tend to fall with it regardless of their fundamentals.
+
+This co-movement raises a precise mathematical question: how many independent
+directions of variation does the equity return matrix truly possess?
+If that number is small, the market is \emph{low-dimensional} in a linear-algebraic
+sense, and a suite of spectral and data-driven methods—SVD, MDS, Spectral Clustering,
+and DMD—become directly applicable.
+
+We analyse daily closing returns for 20 large-cap U.S.\ stocks spanning four sectors
+over the period 2020--2026.
+Our central finding is that \emph{low-dimensional cross-sectional structure and
+temporal unpredictability are not contradictory; they are two sides of the same
+efficient-market coin}.
+The structure concerns \emph{how stocks co-move with each other} on a given day;
+unpredictability concerns \emph{whether tomorrow can be forecast from today}.
+SVD reveals the former; DMD falsifies the latter.
+
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Data and Methods}
+% ──────────────────────────────────────────────────────────────────────────────
+
+\paragraph{Data.}
+We use daily adjusted closing prices from Yahoo Finance for 20 large-cap U.S.\ stocks,
+five from each of four sectors:
+\textit{Technology} (AAPL, MSFT, GOOGL, AMZN, META),
+\textit{Finance} (JPM, BAC, GS, MS, C),
+\textit{Healthcare} (JNJ, UNH, PFE, MRK, ABBV), and
+\textit{Energy} (XOM, CVX, COP, SLB, EOG),
+plus the S\&P~500 index (used as an external benchmark only).
+The period is 2 January 2020 to 24 April 2026 (1{,}585 trading days).
+We compute daily log-returns and standardise each stock to zero mean and unit
+variance, yielding a matrix $\mathbf{X} \in \mathbb{R}^{T \times N}$ with
+$T = 1{,}585$ and $N = 20$.
+
+\paragraph{SVD and Random-Matrix Baseline.}
+We compute the economy SVD $\mathbf{X} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^\top$
+and interpret the singular values via the Eckart--Young theorem \citep{eckart1936approximation}:
+the best rank-$k$ approximation retains the top-$k$ singular values.
+To distinguish genuine factors from finite-sample noise we apply the
+Mar\v{c}enko--Pastur law \citep{marchenko1967distribution}: for an $i.i.d.$
+Gaussian matrix with aspect ratio $q = N/T$, eigenvalues of the sample correlation
+matrix are bounded by $\lambda_{\pm} = (1 \pm \sqrt{q})^2$.
+Eigenvalues exceeding $\lambda_+ \approx 1.30$ indicate statistically real structure.
+
+\paragraph{Correlation, MDS, and Spectral Clustering.}
+We build the $20 \times 20$ Pearson correlation matrix $\mathbf{C}$ of returns.
+Classical MDS embeds the stocks in $\mathbb{R}^2$ using the
+correlation-based distance $d_{ij} = \sqrt{2(1-r_{ij})}$, via double-centering and
+eigendecomposition \citep{kutz2016dynamic}.
+Spectral clustering \citep{luxburg2007tutorial} with $k=4$ uses
+$\tfrac{1}{2}(\mathbf{C}+\mathbf{1})$ as an affinity matrix and is evaluated against
+the known sector labels using the Adjusted Rand Index (ARI).
+
+\paragraph{Dynamic Mode Decomposition.}
+We model the market as a linear discrete-time system $\mathbf{x}_{t+1} = \mathbf{A}\mathbf{x}_t$
+and recover $\mathbf{A}$ via DMD \citep{kutz2016dynamic}.
+Training uses 2020--2022 (755 days); testing uses 2023--2026 (830 days).
+The DMD operator is $\mathbf{A} = \mathbf{X}_2 \mathbf{X}_1^\dagger$ estimated
+through a rank-$r$ truncated SVD of the snapshot matrix $\mathbf{X}_1$.
+We evaluate one-step-ahead forecasts against a zero baseline (predict no change).
+
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Results}
+% ──────────────────────────────────────────────────────────────────────────────
+
+\subsection{SVD Reveals a Low-Rank Cross-Sectional Structure}
+
+Figure~\ref{fig:svd}a shows the scree plot of normalised singular values.
+PC1 alone captures 44.6\% of total variance; the top three components together
+account for 67.9\%, and the top five for 78.3\%.
+The Mar\v{c}enko--Pastur bound $\lambda_+ = 1.24$ is exceeded by exactly four
+eigenvalues (Fig.~\ref{fig:svd}a, vertical dotted line), confirming that only
+four components carry statistically genuine signal; the remaining 16 are
+indistinguishable from noise.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig1_svd.pdf}
+  \caption{SVD of the standardised return matrix $\mathbf{X}$.
+  \textbf{(a)} Scree plot with cumulative variance and the Marchenko--Pastur noise
+  floor (dotted vertical line at three factors).
+  \textbf{(b)} Stock loadings on PC1 vs.\ PC2.
+  All 20 stocks have positive PC1 loadings (market factor);
+  PC2 separates Energy/Finance from Technology.}
+  \label{fig:svd}
+\end{figure}
+
+Figure~\ref{fig:svd}b shows the stock loadings $v_1^{(i)}$ and $v_2^{(i)}$ for each
+stock.
+Every stock carries a positive PC1 loading—reflecting the market-wide co-movement—
+and the PC1 projection correlates at $r = 0.883$ with the external S\&P~500 index.
+This is the \emph{market factor} identified by factor models in the finance
+literature \citep{fama1993common}.
+Importantly, however, the 44.6\% figure is inflated by our stock selection:
+all 20 stocks are large-cap S\&P~500 constituents, sharing institutional
+ownership and index-linked flows.
+A more heterogeneous universe (small-caps, bonds, commodities) would yield a
+substantially smaller PC1.
+
+\subsection{Classical MDS and Spectral Clustering Recover Sector Structure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig2_structure.pdf}
+  \caption{\textbf{(a)} Classical MDS embedding using correlation-based distance.
+  Stocks cluster by sector without sector labels being supplied to the algorithm.
+  \textbf{(b)} Pearson return correlation matrix sorted by sector, with
+  sector boundaries marked.
+  Within-sector blocks are consistently warm (high correlation);
+  cross-sector blocks are cool.}
+  \label{fig:structure}
+\end{figure}
+
+Figure~\ref{fig:structure}a shows the 2-D MDS embedding.
+The four sectors separate cleanly: Technology stocks cluster in the upper region,
+Energy stocks to the lower left, and Finance and Healthcare in between.
+This is a purely data-driven result; no sector information was provided to the
+algorithm.
+
+Spectral clustering with $k=4$ reproduces the known sector partition exactly,
+achieving ARI~$= 1.00$.
+This perfect recovery is supported by Figure~\ref{fig:structure}b: the
+sector-sorted correlation matrix displays a pronounced block-diagonal
+structure, with within-sector correlations substantially exceeding cross-sector ones.
+The correlation heatmap mirrors the MDS geometry: Technology--Technology pairs are
+the most tightly correlated, while Energy--Technology pairs are the most decorrelated.
+
+\subsection{DMD Reveals the Mathematical Signature of Market Efficiency}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig3_dmd.pdf}
+  \caption{\textbf{(a)} DMD eigenvalue spectrum (trained 2020--2022, tested 2023--2026).
+  All 20 eigenvalues lie well inside the unit circle
+  (mean $|\lambda|=0.136$, max $|\lambda|=0.361$), indicating modes that
+  decay within a single trading day.
+  \textbf{(b)} Lag autocorrelation of daily returns (all 20 stocks pooled).
+  The dashed red lines mark the 95\% white-noise confidence interval.
+  The slight negative autocorrelation at short lags reflects a known
+  microstructure effect (bid-ask bounce) rather than exploitable predictability.}
+  \label{fig:dmd}
+\end{figure}
+
+Figure~\ref{fig:dmd}a shows the DMD eigenvalue spectrum.
+All 20 eigenvalues lie strictly inside the unit circle with mean
+$|\lambda| = 0.136$ and maximum $|\lambda| = 0.361$.
+This contrasts sharply with systems governed by persistent dynamics—such as
+periodic fluid flows—where eigenvalues sit on the unit circle, encoding oscillations
+that DMD can faithfully track \citep{kutz2016dynamic}.
+Here, every mode decays in well under one trading day: there is no stable
+dynamical backbone to extrapolate.
+
+Quantitatively, a DMD model trained on 2020--2022 and evaluated on 2023--2026 achieves
+a one-step-ahead RMSE of 0.762 against the zero-prediction baseline of 0.735—
+the trained model is \emph{worse} than predicting no change (ratio 1.04).
+This is not a failure of DMD per se; it is the correct answer.
+In systems with persistent dynamics, DMD succeeds because stable modes carry
+predictive power.
+In an efficient market, any persistent pattern is rapidly arbitraged away,
+leaving only noise.
+
+Figure~\ref{fig:dmd}b shows the lag autocorrelation of returns.
+A mild negative autocorrelation at the shortest lags reflects a well-known
+microstructure effect (bid-ask bounce, mean-reversion of order-book
+imbalances), but the magnitude ($-0.097$ at lag 1) is economically negligible
+once transaction costs are considered.
+The residual after a rank-3 SVD reconstruction shows no additional
+autocorrelation structure beyond the raw returns.
+
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Discussion and Conclusion}
+% ──────────────────────────────────────────────────────────────────────────────
+
+Our analysis resolves what initially appears paradoxical: the market is
+simultaneously low-dimensional and unpredictable.
+The resolution lies in distinguishing two entirely different questions.
+
+\emph{Cross-sectional structure} (how stocks co-move on any given day) is
+low-dimensional, stable, and recoverable: three factors above the random-matrix
+noise floor \citep{laloux1999noise}, a clean block-diagonal correlation matrix,
+and perfect sector recovery from unlabelled returns.
+This structure is the mathematical counterpart of the Fama--French factor model
+\citep{fama1993common}.
+
+\emph{Temporal dynamics} (can tomorrow's return be predicted from today's) are
+dominated by noise.
+DMD eigenvalues near the origin encode modes with sub-day lifetimes; a trained
+linear predictor performs worse out-of-sample than the naive zero forecast.
+This is the mathematical signature of the Efficient Market Hypothesis
+\citep{fama1970efficient}: any learnable temporal pattern is immediately traded
+away, leaving only the irreducible noise floor.
+
+SVD, Classical MDS, Spectral Clustering, and DMD together provide a coherent,
+multi-angle view of market structure and dynamics: the market is genuinely
+low-dimensional across stocks, genuinely noisy across time, and the gap between
+the two is precisely where market efficiency lives.
+
+\bibliographystyle{splncs04}
+\bibliography{reference}
+
+\end{document}
