@@ -5,10 +5,10 @@
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage[square,numbers]{natbib}
-\usepackage[all]{nowidow}
 \usepackage[utf8]{inputenc}
 \usepackage{hyperref}
 \usepackage[margin=1.2in]{geometry}
+\usepackage{placeins}
 
 \renewcommand{\topfraction}{0.85}
 \renewcommand{\bottomfraction}{0.85}
@@ -52,29 +52,24 @@ mathematical signature of market efficiency.
 \section{Introduction}
 % ──────────────────────────────────────────────────────────────────────────────
 
-The U.S.\ equity market, with more than \$40 trillion in market capitalisation,
-is one of the most intensively studied dynamical systems in the world—and one of
-the most difficult to predict \citep{fama1970efficient}.
-This difficulty might suggest a maximally complex system, yet practitioners have
-long observed that most stocks move together: when the broad market falls,
-individual stocks fall with it regardless of their fundamentals.
-
-This co-movement motivates a precise mathematical question:
+The U.S.\ equity market is one of the most intensively studied dynamical systems
+in the world—and one of the most difficult to predict \citep{fama1970efficient}.
+Yet most stocks move together: when the broad market falls, individual stocks
+fall with it regardless of their fundamentals.
+This co-movement raises a precise mathematical question:
 \emph{how many independent directions of variation does the equity return matrix
-truly possess, and does this structure confer temporal predictability?}
-If the market is genuinely low-dimensional, a suite of spectral and data-driven
-methods—SVD, MDS, Spectral Clustering, and Dynamic Mode Decomposition (DMD)—
-become directly applicable.
+truly possess, and does this structure enable prediction?}
 
-We analyse daily returns for 20 large-cap U.S.\ stocks over 2020--2026.
-Our central finding is a distinction that resolves an apparent paradox:
+We address this question by applying SVD, Classical MDS, Spectral Clustering,
+Dynamic Mode Decomposition (DMD), and GARCH to daily returns of 20 large-cap
+U.S.\ stocks over 2020--2026.
+Our central finding resolves an apparent paradox:
 \emph{the market is low-dimensional across stocks but unpredictable over time.}
-SVD reveals a stable, four-factor cross-sectional structure that spectral methods
-recover perfectly from raw returns.
-DMD shows this structure cannot be extrapolated in time—returns are noise—while
-GARCH shows that \emph{risk} can be.
-The implication: mathematical methods can characterise the market's
-structure and manage its risk, but cannot predict its direction.
+SVD reveals four genuine factors that spectral methods recover exactly from raw
+returns; DMD shows this structure cannot be extrapolated forward; GARCH shows
+that \emph{volatility} can be forecast even when return direction cannot.
+The implication: mathematical methods can characterise market structure and
+manage risk, but cannot predict direction.
 
 
 % ──────────────────────────────────────────────────────────────────────────────
@@ -83,39 +78,33 @@ structure and manage its risk, but cannot predict its direction.
 
 \paragraph{Data.}
 We use daily adjusted closing prices from Yahoo Finance for 20 large-cap U.S.\
-stocks, five from each of four sectors (Table~\ref{tab:stocks}), plus the
-S\&P~500 index as an external benchmark.
+stocks, five from each of four sectors—Technology (AAPL, MSFT, GOOGL, AMZN,
+META), Finance (JPM, BAC, GS, MS, C), Healthcare (JNJ, UNH, PFE, MRK, ABBV),
+and Energy (XOM, CVX, COP, SLB, EOG)—plus the S\&P~500 index as an external
+benchmark.
 The period is 2 January 2020 to 24 April 2026 ($T = 1{,}585$ trading days,
 $N = 20$ stocks).
 We compute daily log-returns $r_{i,t} = \ln(p_{i,t}/p_{i,t-1})$ and standardise
 each stock to zero mean and unit variance, yielding the return matrix
 $\mathbf{X} \in \mathbb{R}^{T \times N}$.
 
-\begin{table}[t]
-  \centering
-  \caption{The 20 large-cap U.S.\ stocks used in this study.}
-  \label{tab:stocks}
-  \begin{tabular}{ll}
-    \toprule
-    Sector      & Tickers \\
-    \midrule
-    Technology  & AAPL, MSFT, GOOGL, AMZN, META \\
-    Finance     & JPM, BAC, GS, MS, C \\
-    Healthcare  & JNJ, UNH, PFE, MRK, ABBV \\
-    Energy      & XOM, CVX, COP, SLB, EOG \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
 \paragraph{SVD and Random-Matrix Baseline.}
-We compute the economy SVD $\mathbf{X} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^\top$.
-The columns of $\mathbf{V}$ are the principal components (PCs); the $k$-th PC
-explains fraction $\sigma_k^2/\sum_j\sigma_j^2$ of total variance.
-To distinguish genuine factors from finite-sample noise we apply the
+We compute the thin SVD
+\begin{equation}
+  \mathbf{X} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^\top,\qquad
+  \boldsymbol{\Sigma}=\mathrm{diag}(\sigma_1\geq\cdots\geq\sigma_N\geq 0),
+  \label{eq:svd}
+\end{equation}
+whose right singular vectors (columns of $\mathbf{V}$) are the principal
+components; the $k$-th explains variance fraction $\sigma_k^2/\sum_j\sigma_j^2$.
+To separate genuine factors from finite-sample noise we apply the
 Mar\v{c}enko--Pastur law \citep{marchenko1967distribution}: for an i.i.d.\
-Gaussian matrix with aspect ratio $q = N/T$, eigenvalues of the sample
-correlation matrix are bounded by $\lambda_{\pm} = (1\pm\sqrt{q})^2$;
-eigenvalues above $\lambda_+$ indicate statistically real structure.
+Gaussian matrix with aspect ratio $q=N/T$, bulk eigenvalues are bounded by
+\begin{equation}
+  \lambda_{\pm} = \bigl(1\pm\sqrt{q}\,\bigr)^2;
+  \label{eq:mp}
+\end{equation}
+eigenvalues above $\lambda_+$ signal statistically genuine structure.
 
 \paragraph{Correlation, MDS, and Spectral Clustering.}
 We form the $20\times20$ Pearson correlation matrix $\mathbf{C}$, where
@@ -134,16 +123,31 @@ as an affinity matrix; we evaluate it with the Adjusted Rand Index
 (ARI; $1$ = perfect agreement, $0$ = chance).
 
 \paragraph{Dynamic Mode Decomposition and Portfolio Test.}
-DMD extracts the best-fit linear map $\mathbf{A}$ such that
+DMD finds the best rank-$r$ linear map satisfying
 $\mathbf{x}_{t+1}\approx\mathbf{A}\mathbf{x}_t$ \citep{kutz2016dynamic}.
-If the market has exploitable temporal structure, DMD eigenvalues will lie near
-the unit circle; if not, they will cluster at the origin.
+Given snapshot matrices $\mathbf{X}_1,\mathbf{X}_2\!\in\!\mathbb{R}^{N\times(T-1)}$
+and a rank-$r$ SVD $\mathbf{X}_1=\mathbf{U}_r\boldsymbol{\Sigma}_r\mathbf{V}_r^\top$,
+the reduced operator and its full-space reconstruction are
+\begin{equation}
+  \tilde{\mathbf{A}}=\mathbf{U}_r^\top\mathbf{X}_2\mathbf{V}_r\boldsymbol{\Sigma}_r^{-1},
+  \qquad
+  \mathbf{A}=\mathbf{U}_r\tilde{\mathbf{A}}\mathbf{U}_r^\top.
+  \label{eq:dmd}
+\end{equation}
+We sweep $r=1,\ldots,N$ to examine whether any truncation level recovers
+latent predictability; results for $r=N=20$ (full rank) serve as the main
+reference since they give DMD maximum information.
 We train on 2020--2022 (755 days) and test on 2023--2026 (830 days).
-Predictability is assessed via RMSE relative to a zero-change baseline
-(ratio $>1$ means worse than predicting no change), and via a daily
-dollar-neutral long-short portfolio: we go long the 10 stocks with the highest
-DMD-predicted return and short the 10 with the lowest, tracking cumulative return
-against an equal-weight buy-and-hold benchmark.
+Predictability is measured by the RMSE ratio $\mathrm{RMSE}_{\hat A}/\mathrm{RMSE}_{0}$
+(ratio $>1$: the model is worse than predicting no change), and by a
+dollar-neutral long-short portfolio
+\begin{equation}
+  r_t^{\text{port}} = \frac{1}{10}\!\sum_{i\in\mathcal{L}_t}\!r_{i,t}
+    - \frac{1}{10}\!\sum_{i\in\mathcal{S}_t}\!r_{i,t},
+  \label{eq:portfolio}
+\end{equation}
+where $\mathcal{L}_t$ ($\mathcal{S}_t$) is the 10 highest (lowest) predicted-return
+stocks on day $t$, tracked against an equal-weight buy-and-hold benchmark.
 
 \paragraph{GARCH Volatility Modelling and Volatility-Targeting Portfolio.}
 Having shown that DMD cannot predict return \emph{direction}, we ask whether
@@ -158,10 +162,13 @@ where $h_t$ is the conditional variance, $\alpha$ captures the immediate shock
 impact, and $\beta$ governs persistence.
 We evaluate the one-step-ahead volatility forecast on the 2023--2026 test set
 against the unconditional-mean baseline.
-We also construct a \emph{volatility-targeting} portfolio:
-position size $w_t = \min(\sigma^*/\hat\sigma_t,\,2)$ scales the equal-weight
-portfolio to hit a target daily volatility $\sigma^*=1\%$, capping leverage at
-$2\times$.
+We also construct a \emph{volatility-targeting} portfolio whose daily position
+size $w_t = \min(\sigma^*/\hat\sigma_t,\,2)$ scales the equal-weight portfolio to
+a target daily volatility $\sigma^*=1\%$, capping leverage at $2\times$.
+Performance throughout is summarised by the annualised Sharpe ratio
+$\mathrm{SR}=(\bar r_d/\hat\sigma_d)\sqrt{252}$.
+As a robustness check we also fit GARCH(1,1) to each of the 20 stocks
+individually, isolating idiosyncratic from systematic variance.
 
 
 % ──────────────────────────────────────────────────────────────────────────────
@@ -265,6 +272,39 @@ A portfolio acting on these predictions loses $-45.4\%$ over the 2023--2026 test
 period, while a passive equal-weight portfolio gains $+92.0\%$
 (Fig.~\ref{fig:dmd}c, annualised Sharpe $=-1.23$).
 
+\paragraph{Rank sensitivity.}
+To test whether a lower-rank truncation recovers latent predictability, we
+evaluate DMD for every $r=1,\ldots,20$ (Fig.~\ref{fig:dmd_rank}).
+Two results stand out.
+First, RMSE increases monotonically with $r$: adding noise modes strictly hurts
+out-of-sample prediction, with no elbow or optimal interior rank.
+Second, the best long-short portfolio return is achieved at $r=3$
+($+49.0\%$, Sharpe $=0.80$)---precisely the number of eigenvalues that
+exceed the Mar\v{c}enko--Pastur noise floor.
+This alignment is not coincidental: the three genuine cross-sectional factors
+provide the cleanest signal for relative stock ranking.
+Yet even at this optimal $r$, the strategy returns less than half the passive
+benchmark ($+92.0\%$, Sharpe $=1.43$).
+Above $r=3$ the additional modes are noise, and portfolio returns collapse;
+at $r=1$ the single market factor predicts all stocks moving together,
+rendering the long-short ranking useless ($-46.0\%$).
+The rank sweep therefore sharpens the earlier finding: the
+market's cross-sectional structure is exploitable only at the factor level,
+and even then not enough to beat the market.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig_dmd_rank_sweep.pdf}
+  \caption{DMD rank sweep ($r=1,\ldots,20$), trained 2020--2022 and tested 2023--2026.
+  \textbf{(a)} One-step RMSE penalty relative to the zero-change baseline: every rank
+  is worse than predicting no change, and the penalty grows with $r$.
+  \textbf{(b)} Cumulative L/S portfolio returns for each $r$ (coloured) vs.\ the
+  equal-weight benchmark (dashed black).
+  \textbf{(c)} Summary of cumulative return and annualised Sharpe by rank; the
+  optimum at $r=3$ coincides with the Mar\v{c}enko--Pastur noise-floor count.}
+  \label{fig:dmd_rank}
+\end{figure}
+
 \emph{What we learned:} the market's stable spatial structure does not imply
 temporal predictability.
 Any linear pattern in returns is arbitraged away before it can be exploited—the
@@ -294,29 +334,16 @@ This near-unity persistence means a large volatility shock today still echoes
 strongly tomorrow—volatility is long-lived and therefore forecastable.
 The model achieves a 22.5\% reduction in RMSE on the held-out 2023--2026 period
 relative to predicting the historical mean (Fig.~\ref{fig:garch}b).
-
-\subsection{Portfolio Comparison: Risk Management Beats Return Prediction}
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\linewidth]{figures/fig7_portfolio.pdf}
-  \caption{Cumulative return of three strategies on the 2023--2026 test period.
-  The DMD long-short portfolio ($-45.4\%$) confirms that return predictions are
-  worthless.
-  The GARCH volatility-targeting strategy ($+96.4\%$, Sharpe $1.44$) outperforms
-  the equal-weight benchmark ($+92.0\%$, Sharpe $1.43$) by scaling up during
-  low-volatility periods.}
-  \label{fig:portfolio}
-\end{figure}
-
-Figure~\ref{fig:portfolio} brings the statistical findings into economic relief.
-The DMD long-short strategy ($-45.4\%$, Sharpe $=-1.23$) catastrophically
-underperforms the passive benchmark, confirming that DMD return predictions carry
-no exploitable signal.
-The GARCH volatility-targeting strategy ($+96.4\%$, Sharpe $=1.44$) modestly
-outperforms the benchmark ($+92.0\%$, Sharpe $=1.43$) by running at average
-leverage $1.15\times$ during the calm 2024 bull run and reducing exposure during
-high-volatility episodes.
+Applied stock-by-stock to the 20 individual equities, GARCH barely improves on
+the unconditional mean (8 of 20 stocks, mean RMSE ratio $1.005$): the forecastable
+component is \emph{systematic} market volatility (captured by the S\&P~500
+index), not idiosyncratic variance.
+In portfolio terms, a GARCH volatility-targeting strategy ($+96.4\%$,
+Sharpe $=1.44$) modestly outperforms the passive benchmark ($+92.0\%$,
+Sharpe $=1.43$) by scaling exposure up during calm periods and down during
+high-volatility episodes—contrasting sharply with the DMD long-short strategy
+($-45.4\%$, Sharpe $=-1.23$) that catastrophically underperforms the same
+benchmark.
 
 \emph{What we learned:} the EMH constrains the predictability of return
 \emph{direction} (first moment), not return \emph{magnitude} (second moment).
@@ -326,6 +353,7 @@ Mathematical methods can manage risk but not manufacture alpha.
 % ──────────────────────────────────────────────────────────────────────────────
 \section{Conclusion}
 % ──────────────────────────────────────────────────────────────────────────────
+\typeout{AFTER SECTION: pagegoal=\the\pagegoal, pagetotal=\the\pagetotal}
 
 \emph{So what?}
 We set out to ask whether the U.S.\ equity market is low-dimensional, and whether
@@ -339,25 +367,53 @@ This structure is stable, interpretable, and recoverable without labels—a
 mathematical counterpart of the Fama--French factor model \citep{fama1993common}.
 
 Over time, return \emph{direction} is not predictable.
-DMD's eigenvalues cluster at the origin rather than on the unit circle, and a
-portfolio trained to exploit its predictions destroys $45.4\%$ of capital while
-the market gains $92.0\%$.
-This is not a failure of the method; it is the mathematical signature of the
-Efficient Market Hypothesis \citep{fama1970efficient}:
-any learnable pattern in prices is immediately arbitraged away.
+DMD's eigenvalues cluster at the origin rather than on the unit circle.
+A systematic rank sweep reveals that the optimal truncation is $r=3$—matching
+the Mar\v{c}enko--Pastur noise floor—yet even this best case returns only
+$+49.0\%$ (Sharpe $=0.80$) against the passive benchmark's $+92.0\%$
+(Sharpe $=1.43$); at full rank ($r=20$) the portfolio loses $45.4\%$.
+Any learnable pattern in prices is immediately arbitraged away—the mathematical
+signature of the Efficient Market Hypothesis \citep{fama1970efficient}.
+Return \emph{magnitude}, however, is predictable: GARCH captures volatility
+persistence ($\hat\alpha+\hat\beta=0.962$), reduces forecasting error by 22.5\%,
+and enables a risk-adjusted strategy that outperforms the benchmark.
 
-Return \emph{magnitude}, however, is predictable.
-GARCH captures the persistence of volatility ($\hat\alpha+\hat\beta=0.962$),
-reduces forecasting error by 22.5\%, and enables a volatility-targeting strategy
-that outperforms the benchmark on a risk-adjusted basis.
+The take-away is precise: invest in risk management, not in return-prediction
+algorithms—spectral methods expose the boundary between what can and cannot
+be predicted with mathematical clarity.
+\typeout{END OF CONCLUSION: pagegoal=\the\pagegoal, pagetotal=\the\pagetotal, remaining=\the\dimexpr\pagegoal-\pagetotal}
 
-For practitioners, the lesson is precise: invest in risk management
-infrastructure, not in return-prediction algorithms.
-For theorists, the result is clean: the Efficient Market Hypothesis forbids
-first-moment predictability, not second-moment predictability—and the spectral
-tools of this course expose that boundary with mathematical clarity.
+\begin{thebibliography}{1}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\doi}[1]{https://doi.org/#1}
 
-\bibliographystyle{splncs04}
-\bibliography{reference}
+\bibitem{bollerslev1986generalized}
+Bollerslev, T.: Generalized autoregressive conditional heteroskedasticity.
+  Journal of Econometrics  \textbf{31}(3),  307--327 (1986)
+
+\bibitem{fama1970efficient}
+Fama, E.F.: Efficient capital markets: {A} review of theory and empirical work.
+  The Journal of Finance  \textbf{25}(2),  383--417 (1970)
+
+\bibitem{fama1993common}
+Fama, E.F., French, K.R.: Common risk factors in the returns on stocks and
+  bonds. Journal of Financial Economics  \textbf{33}(1),  3--56 (1993)
+
+\bibitem{kutz2016dynamic}
+Kutz, J.N., Brunton, S.L., Brunton, B.W., Proctor, J.L.: Dynamic Mode
+  Decomposition: Data-Driven Modeling of Complex Systems. SIAM, Philadelphia
+  (2016)
+
+\bibitem{marchenko1967distribution}
+Mar{\v{c}}enko, V.A., Pastur, L.A.: Distribution of eigenvalues for some sets
+  of random matrices. Mathematics of the USSR-Sbornik  \textbf{1}(4),  457--483
+  (1967)
+
+\bibitem{luxburg2007tutorial}
+Von~Luxburg, U.: A tutorial on spectral clustering. Statistics and Computing
+  \textbf{17}(4),  395--416 (2007)
+
+\end{thebibliography}
 
 \end{document}
