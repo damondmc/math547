@@ -121,11 +121,11 @@ eigenvalues above $\lambda_+$ indicate statistically real structure.
 We form the $20\times20$ Pearson correlation matrix $\mathbf{C}$, where
 \begin{equation}
   \rho_{ij} = \frac{\sum_{t}(r_{i,t}-\bar r_i)(r_{j,t}-\bar r_j)}
-                   {\sqrt{\sum_t(r_{i,t}-\bar r_i)^2\,\sum_t(r_{j,t}-\bar r_j)^2}}
+    {\sqrt{\sum_t(r_{i,t}-\bar r_i)^2\cdot\sum_t(r_{j,t}-\bar r_j)^2}}
   \label{eq:pearson}
 \end{equation}
 is the pairwise return correlation (which simplifies to
-$\rho_{ij}=\frac{1}{T-1}\sum_t r_{i,t}r_{j,t}$ after standardisation).
+$\rho_{ij}=\tfrac{1}{T-1}\sum_t r_{i,t}r_{j,t}$ after standardisation).
 Classical MDS \citep{kutz2016dynamic} embeds stocks in $\mathbb{R}^2$ via the
 correlation distance $d_{ij}=\sqrt{2(1-\rho_{ij})}$.
 Spectral clustering \citep{luxburg2007tutorial} with $k=4$ (motivated by the
