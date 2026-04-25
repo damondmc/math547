@@ -1,38 +1,19 @@
 \documentclass[runningheads]{llncs}
 
 \usepackage{amsmath}
-\usepackage{lipsum}
 \usepackage{booktabs}
-\usepackage{caption}
 \usepackage{amssymb}
-\usepackage{subcaption}
 \usepackage{graphicx}
-\usepackage{pgfplots}
 \usepackage[square,numbers]{natbib}
 \usepackage[all]{nowidow}
 \usepackage[utf8]{inputenc}
-\usepackage{tikz}
-\usetikzlibrary{er,positioning,bayesnet}
-\usepackage{multicol}
-\usepackage{algpseudocode,algorithm,algorithmicx}
-\usepackage{minted}
 \usepackage{hyperref}
-\usepackage[inline]{enumitem}
 \usepackage[margin=1.2in]{geometry}
-
-\newcommand{\card}[1]{\left\vert{#1}\right\vert}
-\newcommand*\Let[2]{\State #1 $\gets$ #2}
-\definecolor{blue}{HTML}{1F77B4}
-\definecolor{orange}{HTML}{FF7F0E}
-\definecolor{green}{HTML}{2CA02C}
-
-\pgfplotsset{compat=1.14}
 
 \renewcommand{\topfraction}{0.85}
 \renewcommand{\bottomfraction}{0.85}
-\renewcommand{\textfraction}{0.15}
-\renewcommand{\floatpagefraction}{0.8}
-\renewcommand{\textfraction}{0.1}
+\renewcommand{\textfraction}{0.10}
+\renewcommand{\floatpagefraction}{0.80}
 \setlength{\floatsep}{3pt plus 1pt minus 1pt}
 \setlength{\textfloatsep}{3pt plus 1pt minus 1pt}
 \setlength{\intextsep}{3pt plus 1pt minus 1pt}
@@ -44,27 +25,25 @@
 Factor Structure, Sectoral Geometry, and Market Efficiency}
 
 \author{Damon H.\,T.\ Cheung}
-% \email{damoncht@umich.edu}
 \institute{University of Michigan, Ann Arbor, MI 48109}
 
 \maketitle
 
 \begin{abstract}
 We apply spectral and data-driven methods to daily returns of 20 large-cap
-U.S.\ equities (2020--2026) to characterise the mathematical structure of
-equity markets.
-Singular Value Decomposition (SVD) reveals that the return cross-section is
-dominated by a single market factor and carries only four statistically genuine components.
+U.S.\ equities (2020--2026) to ask: how many independent directions of variation
+does the market possess, and can that structure be exploited for prediction?
+Singular Value Decomposition (SVD) reveals only four statistically genuine factors;
 Classical Multidimensional Scaling (MDS) and Spectral Clustering recover the four
-known sectors without any sector labels being supplied.
-Dynamic Mode Decomposition (DMD) shows that returns are temporally unpredictable:
-a trained linear model performs \emph{worse} than simply predicting no change.
-Complementary Generalized Autoregressive Conditional Heteroskedasticity (GARCH)
-modelling and a Hidden Markov Model (HMM) reveal that while returns
-are unpredictable, \emph{volatility} is persistent and forecastable, with distinct
-high- and low-volatility regimes identifiable from past data.
-These results reconcile an apparent paradox: the market is genuinely
-low-dimensional across stocks yet genuinely unpredictable in time—a precise
+known sectors without any labels.
+Dynamic Mode Decomposition (DMD) shows that returns are temporally unpredictable—a
+trained linear model underperforms a zero-change forecast, and a portfolio acting
+on its predictions loses $-45.4\%$ while the passive benchmark gains $+92.0\%$.
+Generalized Autoregressive Conditional Heteroskedasticity (GARCH) modelling shows
+the complementary result: while return \emph{direction} is unpredictable, return
+\emph{magnitude} (volatility) is forecastable, and a volatility-targeting portfolio
+achieves $+96.4\%$ with a higher Sharpe ratio.
+The market is low-dimensional across stocks yet unpredictable in time—the
 mathematical signature of market efficiency.
 \end{abstract}
 
@@ -73,46 +52,48 @@ mathematical signature of market efficiency.
 \section{Introduction}
 % ──────────────────────────────────────────────────────────────────────────────
 
-The U.S.\ equity market, with more than \$40 trillion in market capitalisation and
-thousands of professional analysts, is one of the most intensively studied dynamical
-systems in the world—and one of the most difficult to predict \citep{fama1970efficient}.
-This difficulty might suggest a maximally complex system, yet practitioners have long
-known that most stocks move together: when the broad market falls, individual
-stocks tend to fall with it regardless of their fundamentals.
+The U.S.\ equity market, with more than \$40 trillion in market capitalisation,
+is one of the most intensively studied dynamical systems in the world—and one of
+the most difficult to predict \citep{fama1970efficient}.
+This difficulty might suggest a maximally complex system, yet practitioners have
+long observed that most stocks move together: when the broad market falls,
+individual stocks fall with it regardless of their fundamentals.
 
-This co-movement raises a precise mathematical question: how many independent
-directions of variation does the equity return matrix truly possess?
-If that number is small, the market is \emph{low-dimensional} in a linear-algebraic
-sense, and a suite of spectral and data-driven methods—Singular Value Decomposition (SVD),
-Classical Multidimensional Scaling (MDS), Spectral Clustering,
-and Dynamic Mode Decomposition (DMD)—become directly applicable.
+This co-movement motivates a precise mathematical question:
+\emph{how many independent directions of variation does the equity return matrix
+truly possess, and does this structure confer temporal predictability?}
+If the market is genuinely low-dimensional, a suite of spectral and data-driven
+methods—SVD, MDS, Spectral Clustering, and Dynamic Mode Decomposition (DMD)—
+become directly applicable.
 
-We analyse daily closing returns for 20 large-cap U.S.\ stocks spanning four sectors
-over the period 2020--2026.
-Our central finding is that \emph{low-dimensional cross-sectional structure and
-temporal unpredictability are not contradictory; they are two sides of the same
-efficient-market coin}.
-The structure concerns \emph{how stocks co-move with each other} on a given day;
-unpredictability concerns \emph{whether tomorrow can be forecast from today}.
-SVD reveals the former; DMD falsifies the latter.
+We analyse daily returns for 20 large-cap U.S.\ stocks over 2020--2026.
+Our central finding is a distinction that resolves an apparent paradox:
+\emph{the market is low-dimensional across stocks but unpredictable over time.}
+SVD reveals a stable, four-factor cross-sectional structure that spectral methods
+recover perfectly from raw returns.
+DMD shows this structure cannot be extrapolated in time—returns are noise—while
+GARCH shows that \emph{risk} can be.
+The implication: mathematical methods can characterise the market's
+structure and manage its risk, but cannot predict its direction.
 
 
 % ──────────────────────────────────────────────────────────────────────────────
-\section{Data}
+\section{Data and Methods}
 % ──────────────────────────────────────────────────────────────────────────────
 
-We use daily adjusted closing prices from Yahoo Finance for 20 large-cap U.S.\ stocks,
-five from each of four sectors (Table~\ref{tab:stocks}),
-plus the S\&P~500 index (used as an external benchmark only).
-The period is 2 January 2020 to 24 April 2026, giving $T = 1{,}585$ trading days.
+\paragraph{Data.}
+We use daily adjusted closing prices from Yahoo Finance for 20 large-cap U.S.\
+stocks, five from each of four sectors (Table~\ref{tab:stocks}), plus the
+S\&P~500 index as an external benchmark.
+The period is 2 January 2020 to 24 April 2026 ($T = 1{,}585$ trading days,
+$N = 20$ stocks).
 We compute daily log-returns $r_{i,t} = \ln(p_{i,t}/p_{i,t-1})$ and standardise
-each stock to zero mean and unit variance, yielding a return matrix
-$\mathbf{X} \in \mathbb{R}^{T \times N}$ where $T = 1{,}585$ is the number of
-trading days and $N = 20$ is the number of stocks.
+each stock to zero mean and unit variance, yielding the return matrix
+$\mathbf{X} \in \mathbb{R}^{T \times N}$.
 
 \begin{table}[t]
   \centering
-  \caption{The 20 large-cap U.S.\ stocks used in this study, grouped by sector.}
+  \caption{The 20 large-cap U.S.\ stocks used in this study.}
   \label{tab:stocks}
   \begin{tabular}{ll}
     \toprule
@@ -126,410 +107,255 @@ trading days and $N = 20$ is the number of stocks.
   \end{tabular}
 \end{table}
 
-
-% ──────────────────────────────────────────────────────────────────────────────
-\section{Methods}
-% ──────────────────────────────────────────────────────────────────────────────
-
 \paragraph{SVD and Random-Matrix Baseline.}
 We compute the economy SVD $\mathbf{X} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^\top$.
-The columns of $\mathbf{V}$ are the right singular vectors (principal components, PCs);
-the fraction of total variance explained by the $k$-th PC is $\sigma_k^2 / \sum_j \sigma_j^2$.
-By the Eckart--Young theorem \citep{eckart1936approximation}, the top-$k$ singular values
-give the best rank-$k$ approximation to $\mathbf{X}$.
-The number of genuine factors—those reflecting real market co-movement rather than
-finite-sample noise—is assessed via the Mar\v{c}enko--Pastur law
-\citep{marchenko1967distribution}: for an i.i.d.\ Gaussian matrix with aspect ratio
-$q = N/T$, eigenvalues of the sample correlation matrix are bounded by
-$\lambda_{\pm} = (1 \pm \sqrt{q})^2$; eigenvalues exceeding $\lambda_+$ reveal
-statistically real structure.
-If only a few eigenvalues clear this threshold, the return cross-section is
-genuinely low-dimensional.
+The columns of $\mathbf{V}$ are the principal components (PCs); the $k$-th PC
+explains fraction $\sigma_k^2/\sum_j\sigma_j^2$ of total variance.
+To distinguish genuine factors from finite-sample noise we apply the
+Mar\v{c}enko--Pastur law \citep{marchenko1967distribution}: for an i.i.d.\
+Gaussian matrix with aspect ratio $q = N/T$, eigenvalues of the sample
+correlation matrix are bounded by $\lambda_{\pm} = (1\pm\sqrt{q})^2$;
+eigenvalues above $\lambda_+$ indicate statistically real structure.
 
 \paragraph{Correlation, MDS, and Spectral Clustering.}
-We build the $20 \times 20$ Pearson correlation matrix $\mathbf{C}$, where entry
+We form the $20\times20$ Pearson correlation matrix $\mathbf{C}$, where
 \begin{equation}
-  \rho_{ij} = \frac{\displaystyle\sum_{t=1}^{T}(r_{i,t}-\bar{r}_i)(r_{j,t}-\bar{r}_j)}
-                   {\sqrt{\displaystyle\sum_{t=1}^{T}(r_{i,t}-\bar{r}_i)^2\;
-                          \sum_{t=1}^{T}(r_{j,t}-\bar{r}_j)^2}}
+  \rho_{ij} = \frac{\sum_{t}(r_{i,t}-\bar r_i)(r_{j,t}-\bar r_j)}
+                   {\sqrt{\sum_t(r_{i,t}-\bar r_i)^2\,\sum_t(r_{j,t}-\bar r_j)^2}}
   \label{eq:pearson}
 \end{equation}
-is the Pearson correlation between the return series of stocks $i$ and $j$
-(because returns are already standardised to zero mean and unit variance,
-$\bar{r}_i = 0$ and this reduces to $\rho_{ij} = \tfrac{1}{T-1}\sum_t r_{i,t}r_{j,t}$).
-Classical MDS \citep{kutz2016dynamic} maps each stock to a point in $\mathbb{R}^2$
-using the correlation-based distance $d_{ij} = \sqrt{2(1-\rho_{ij})}$, via
-double-centering and eigendecomposition; this reveals whether stocks with similar
-return profiles are geometrically close regardless of their labels.
+is the pairwise return correlation (which simplifies to
+$\rho_{ij}=\frac{1}{T-1}\sum_t r_{i,t}r_{j,t}$ after standardisation).
+Classical MDS \citep{kutz2016dynamic} embeds stocks in $\mathbb{R}^2$ via the
+correlation distance $d_{ij}=\sqrt{2(1-\rho_{ij})}$.
 Spectral clustering \citep{luxburg2007tutorial} with $k=4$ (motivated by the
-four-cluster structure visible in the MDS embedding) uses
-$\tfrac{1}{2}(\mathbf{C}+\mathbf{1})$ as an affinity matrix and is evaluated against
-the true sector labels using the Adjusted Rand Index
-(ARI; ARI$=1$ means perfect agreement, ARI$=0$ means chance).
+four clusters visible in the MDS embedding) uses $\tfrac{1}{2}(\mathbf{C}+\mathbf{1})$
+as an affinity matrix; we evaluate it with the Adjusted Rand Index
+(ARI; $1$ = perfect agreement, $0$ = chance).
 
-\paragraph{Dynamic Mode Decomposition.}
-DMD extracts the best-fit linear operator governing temporal evolution: if the market
-has exploitable structure, its eigenvalues will lie near the unit circle, encoding
-persistent oscillations that can be extrapolated into the future.
-We model the market as a linear discrete-time system $\mathbf{x}_{t+1} = \mathbf{A}\mathbf{x}_t$
-and recover $\mathbf{A}$ via DMD \citep{kutz2016dynamic}.
-We train on the first three years of data (2020--2022, 755 trading days) and
-evaluate on the remaining 830 days (2023--2026).
-The DMD operator is $\mathbf{A} = \mathbf{X}_2 \mathbf{X}_1^\dagger$ estimated
-through a rank-$r$ truncated SVD of the snapshot matrix $\mathbf{X}_1$.
-We assess predictability on the test set in two complementary ways.
-First, we compute root-mean-squared error (RMSE) of one-step-ahead forecasts against
-a zero baseline; a ratio above 1 means the trained model is worse than predicting no
-change.
-Second, we construct a daily dollar-neutral long-short portfolio: each day we go long
-the 10 stocks with the highest DMD-predicted return and short the 10 with the lowest,
-equal-weighted within each leg, and track the cumulative return against an equal-weight
-buy-and-hold benchmark using actual (unstandardised) percentage returns.
+\paragraph{Dynamic Mode Decomposition and Portfolio Test.}
+DMD extracts the best-fit linear map $\mathbf{A}$ such that
+$\mathbf{x}_{t+1}\approx\mathbf{A}\mathbf{x}_t$ \citep{kutz2016dynamic}.
+If the market has exploitable temporal structure, DMD eigenvalues will lie near
+the unit circle; if not, they will cluster at the origin.
+We train on 2020--2022 (755 days) and test on 2023--2026 (830 days).
+Predictability is assessed via RMSE relative to a zero-change baseline
+(ratio $>1$ means worse than predicting no change), and via a daily
+dollar-neutral long-short portfolio: we go long the 10 stocks with the highest
+DMD-predicted return and short the 10 with the lowest, tracking cumulative return
+against an equal-weight buy-and-hold benchmark.
 
 \paragraph{GARCH Volatility Modelling and Volatility-Targeting Portfolio.}
-Since DMD addresses only the first moment (expected return), we separately ask whether
-the \emph{second moment} (variance) is forecastable.
-We fit a GARCH(1,1) model \citep{bollerslev1986generalized} to S\&P~500 daily
-log-returns.
-The notation GARCH($p$,$q$) denotes $p$ lagged squared-return terms (ARCH) and
-$q$ lagged conditional-variance terms (GARCH); the simplest case $(p,q)=(1,1)$ has
-the one-step-ahead conditional variance
-\[
-  h_t = \omega + \alpha\, r_{t-1}^2 + \beta\, h_{t-1},
-\]
-where $\alpha$ captures the immediate impact of a return shock and $\beta$ governs
-how long that shock persists.
-If $\alpha + \beta \approx 1$, volatility shocks are long-lived, suggesting that
-past returns carry genuine information about future risk even when they carry no
-information about future direction.
-We compare the RMSE of $\hat\sigma_t = \sqrt{h_t}$ against realised absolute returns
-$|r_t|$ on the held-out 2023--2026 period, using the unconditional mean $\bar\sigma$
-as a baseline.
-We also construct a \emph{volatility-targeting} portfolio: on each test day, the
-equal-weight portfolio position is scaled to $w_t = \min(\sigma^*/\hat\sigma_t,\, 2)$,
-where $\sigma^* = 1\%$ is the daily volatility target and the cap of 2 limits
-leverage; this tests whether GARCH's forecastable risk translates into
-risk-adjusted outperformance.
-
-\paragraph{Hidden Markov Model and Regime-Switching Portfolio.}
-The HMM complements GARCH by asking whether the market switches between distinct,
-recurrent volatility regimes—and if so, whether those regimes are identifiable
-from the observable return signal alone.
-We fit a three-state Gaussian Hidden Markov Model (HMM) \citep{hamilton1989new}
-to the bivariate daily sequence of PC1 returns and a 20-day rolling standard
-deviation of S\&P~500 returns.
-States are sorted by mean PC1 return and labelled Bear, Neutral, and Bull.
-Comparing return distributions across states reveals whether the decoded regimes
-differ in level (first moment), dispersion (second moment), or both—directly
-testing whether HMM states are return regimes, volatility regimes, or neither.
-For the portfolio test, we fit the HMM on training data only
-(2020--2022) and decode test-period states using the causal forward filter
-(no look-ahead: state at day $t$ uses only returns up to day $t$).
-A \emph{bear-avoidance} strategy holds cash when the decoded state is Bear
-and invests fully in the equal-weight portfolio otherwise, with the allocation
-for day $t{+}1$ based on the state decoded at day $t$.
+Having shown that DMD cannot predict return \emph{direction}, we ask whether
+return \emph{magnitude} (volatility) is forecastable.
+We fit a GARCH(1,1) model \citep{bollerslev1986generalized} to S\&P~500 returns:
+\begin{equation}
+  r_t = \varepsilon_t\sqrt{h_t},\qquad
+  h_t = \omega + \alpha\,r_{t-1}^2 + \beta\,h_{t-1},
+  \label{eq:garch}
+\end{equation}
+where $h_t$ is the conditional variance, $\alpha$ captures the immediate shock
+impact, and $\beta$ governs persistence.
+We evaluate the one-step-ahead volatility forecast on the 2023--2026 test set
+against the unconditional-mean baseline.
+We also construct a \emph{volatility-targeting} portfolio:
+position size $w_t = \min(\sigma^*/\hat\sigma_t,\,2)$ scales the equal-weight
+portfolio to hit a target daily volatility $\sigma^*=1\%$, capping leverage at
+$2\times$.
 
 
 % ──────────────────────────────────────────────────────────────────────────────
 \section{Results}
 % ──────────────────────────────────────────────────────────────────────────────
 
-\subsection{SVD Reveals a Low-Rank Cross-Sectional Structure}
-
-Figure~\ref{fig:svd}a shows the scree plot of normalised singular values.
-PC1 alone captures 44.6\% of total variance; the top three components together
-account for 67.9\%, and the top five for 78.3\%.
-The Mar\v{c}enko--Pastur bound $\lambda_+ = 1.24$ is exceeded by exactly four
-eigenvalues (Fig.~\ref{fig:svd}a, vertical dotted line), confirming that only
-four components carry statistically genuine signal; the remaining 16 are
-indistinguishable from noise.
+\subsection{The Market Is Low-Dimensional: Four Genuine Factors}
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/fig1_svd.pdf}
   \caption{SVD of the standardised return matrix $\mathbf{X}$.
-  \textbf{(a)} Scree plot with cumulative variance and the Marchenko--Pastur noise
-  floor (dotted vertical line at three factors).
+  \textbf{(a)} Scree plot: the dotted vertical line marks the
+  Marchenko--Pastur noise floor; only four eigenvalues exceed it.
   \textbf{(b)} Stock loadings on PC1 vs.\ PC2.
-  All 20 stocks have positive PC1 loadings (market factor);
-  PC2 separates Energy/Finance from Technology.}
+  Every stock has a positive PC1 loading (the market factor);
+  PC2 separates Energy and Finance from Technology.}
   \label{fig:svd}
 \end{figure}
 
-Figure~\ref{fig:svd}b shows the stock loadings $v_1^{(i)}$ and $v_2^{(i)}$ for each
-stock.
-Every stock carries a positive PC1 loading—reflecting the market-wide co-movement—
-and the PC1 projection correlates at $r = 0.883$ with the external S\&P~500 index.
-This is the \emph{market factor} identified by factor models in the finance
-literature \citep{fama1993common}.
-Importantly, however, the 44.6\% figure is inflated by our stock selection:
-all 20 stocks are large-cap S\&P~500 constituents, sharing institutional
-ownership and index-linked flows.
-A more heterogeneous universe (small-caps, bonds, commodities) would yield a
-substantially smaller PC1.
+PC1 captures 44.6\% of total variance; the top three PCs together explain
+67.9\%.
+Crucially, the Marchenko--Pastur bound $\lambda_+=1.24$ is exceeded by
+exactly \emph{four} eigenvalues (Fig.~\ref{fig:svd}a)—all remaining 16 are
+statistically indistinguishable from random noise.
+The market is genuinely low-dimensional: a $20$-stock universe reduces to
+four meaningful directions.
 
-\subsection{Classical MDS and Spectral Clustering Recover Sector Structure}
+Figure~\ref{fig:svd}b shows what those directions are.
+Every stock has a positive PC1 loading, confirming a single market-wide
+co-movement factor ($r=0.883$ with the S\&P~500 index)—the market factor of
+\citet{fama1993common}.
+PC2 then separates Energy and Finance from Technology, hinting that the
+remaining factors capture sector-specific variation.
+
+\subsection{Sector Structure Is Perfectly Recoverable Without Labels}
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/fig2_structure.pdf}
-  \caption{\textbf{(a)} Classical MDS embedding using correlation-based distance.
-  Stocks cluster by sector without sector labels being supplied to the algorithm.
-  \textbf{(b)} Pearson return correlation matrix sorted by sector, with
-  sector boundaries marked.
-  Within-sector blocks are consistently warm (high correlation);
-  cross-sector blocks are cool.}
+  \caption{\textbf{(a)} Classical MDS embedding: stocks cluster by sector
+  with no label information supplied.
+  \textbf{(b)} Pearson correlation matrix sorted by sector.
+  Within-sector blocks are warm (high $\rho_{ij}$); cross-sector blocks are cool.}
   \label{fig:structure}
 \end{figure}
 
-Figure~\ref{fig:structure}a shows the 2-D MDS embedding.
-The four sectors separate cleanly: Technology stocks cluster in the upper region,
-Energy stocks to the lower left, and Finance and Healthcare in between.
-This is a purely data-driven result; no sector information was provided to the
-algorithm.
+The MDS embedding (Fig.~\ref{fig:structure}a) translates correlation geometry
+into Euclidean space: Technology clusters tightly in the upper region, Energy
+to the lower left, with Finance and Healthcare in between.
+No sector labels were provided—the geometry emerges entirely from return
+correlations.
 
-Spectral clustering with $k=4$ reproduces the known sector partition exactly,
-achieving ARI~$= 1.00$.
-This perfect recovery is supported by Figure~\ref{fig:structure}b:
-the sector-sorted correlation matrix displays a pronounced block-diagonal structure,
-with within-sector correlations substantially exceeding cross-sector ones.
-The correlation heatmap mirrors the MDS geometry: Technology--Technology pairs are
-the most tightly correlated, while Energy--Technology pairs are the most decorrelated.
+Spectral clustering with $k=4$ reproduces the known sector partition exactly
+(ARI $=1.00$), supported by the block-diagonal structure of the correlation
+heatmap (Fig.~\ref{fig:structure}b).
+Within-sector correlations are consistently higher than cross-sector ones;
+Technology--Technology pairs are the most tightly linked, while
+Energy--Technology pairs are the most decorrelated.
 
-\subsection{DMD Reveals the Mathematical Signature of Market Efficiency}
+\emph{What we learned:} the four-factor structure found by SVD maps directly
+onto the four economic sectors.
+The market is not just low-dimensional—it is \emph{interpretably}
+low-dimensional.
+
+\subsection{Returns Are Temporally Unpredictable: DMD Fails}
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/fig3_dmd.pdf}
-  \caption{\textbf{(a)} DMD eigenvalue spectrum (trained 2020--2022, tested
-  2023--2026). All 20 eigenvalues lie well inside the unit circle
-  (mean $|\lambda|=0.136$, max $|\lambda|=0.361$), indicating modes that
-  decay within a single trading day.
-  \textbf{(b)} Lag-$k$ autocorrelation $\rho_k = \mathrm{Corr}(r_t,r_{t-k})$
-  of daily returns (all 20 stocks pooled). Values within the red dashed 95\%
-  white-noise band are indistinguishable from zero.
-  \textbf{(c)} Cumulative return of the DMD long-short portfolio vs.\ an
-  equal-weight benchmark (test period 2023--2026). The DMD strategy loses
-  $-45.4\%$ while the benchmark gains $+92.0\%$.}
+  \caption{\textbf{(a)} DMD eigenvalue spectrum (trained 2020--2022,
+  tested 2023--2026). All eigenvalues lie well inside the unit circle
+  (mean $|\lambda|=0.136$), indicating modes that decay within one trading day.
+  \textbf{(b)} Lag-$k$ autocorrelation $\rho_k=\mathrm{Corr}(r_t,r_{t-k})$:
+  nearly every bar is within the 95\% white-noise band (red dashes).
+  \textbf{(c)} The DMD long-short portfolio loses $-45.4\%$ over the test
+  period while the equal-weight benchmark gains $+92.0\%$.}
   \label{fig:dmd}
 \end{figure}
 
-Figure~\ref{fig:dmd}a shows the DMD eigenvalue spectrum.
-All 20 eigenvalues lie strictly inside the unit circle with mean
-$|\lambda| = 0.136$ and maximum $|\lambda| = 0.361$.
-This contrasts sharply with systems governed by persistent dynamics—such as
-periodic fluid flows—where eigenvalues sit on the unit circle, encoding oscillations
-that DMD can faithfully track \citep{kutz2016dynamic}.
-Here, every mode decays in well under one trading day: there is no stable
-dynamical backbone to extrapolate.
+Having established that the market's cross-sectional structure is
+low-dimensional, we now ask whether that structure can be extrapolated forward
+in time.
+DMD finds the answer in its eigenvalues: all 20 lie well inside the unit circle
+(mean $|\lambda|=0.136$, Fig.~\ref{fig:dmd}a).
+In systems with persistent dynamics—such as fluid oscillations—DMD eigenvalues
+sit \emph{on} the unit circle and encode stable modes that can be tracked.
+Here every mode decays within a single trading day; there is no dynamical
+backbone to extrapolate.
 
-Quantitatively, a DMD model trained on 2020--2022 and evaluated on 2023--2026 achieves
-a one-step-ahead RMSE of 0.762 against the zero-prediction baseline of 0.735—
-the trained model is \emph{worse} than predicting no change (ratio 1.04).
-This is not a failure of DMD per se; it is the correct answer.
-In systems with persistent dynamics, DMD succeeds because stable modes carry
-predictive power.
-In an efficient market, any persistent pattern is rapidly arbitraged away,
-leaving only noise.
+This failure is confirmed statistically and economically.
+Statistically, the lag-$k$ autocorrelation $\rho_k=\mathrm{Corr}(r_t,r_{t-k})$
+measures whether today's return predicts tomorrow's: values near zero for all
+$k\geq1$ indicate white noise (Fig.~\ref{fig:dmd}b).
+The only exception is a small negative $\rho_1=-0.066$, a well-known
+microstructure artefact (bid-ask bounce) that vanishes after transaction costs.
+Economically, a DMD model trained on 2020--2022 achieves an out-of-sample RMSE
+of $0.762$ vs.\ the zero-change baseline of $0.735$ (ratio $1.04$)—the trained
+model is \emph{worse} than predicting no change.
+A portfolio acting on these predictions loses $-45.4\%$ over the 2023--2026 test
+period, while a passive equal-weight portfolio gains $+92.0\%$
+(Fig.~\ref{fig:dmd}c, annualised Sharpe $=-1.23$).
 
-Figure~\ref{fig:dmd}b shows the lag-$k$ autocorrelation
-$\rho_k = \mathrm{Corr}(r_t, r_{t-k})$, which measures how strongly today's
-return linearly predicts the return $k$ trading days later.
-If $\rho_k \approx 0$ for all $k \geq 1$, past returns carry no predictive
-information about future returns—the series is consistent with white noise.
-Nearly every bar lies within the 95\% white-noise band.
-The mild negative value at lag~1 ($\rho_1 = -0.066$) reflects a well-known
-microstructure artefact (bid-ask bounce), but its magnitude is economically
-negligible once transaction costs are accounted for.
+\emph{What we learned:} the market's stable spatial structure does not imply
+temporal predictability.
+Any linear pattern in returns is arbitraged away before it can be exploited—the
+mathematical signature of the Efficient Market Hypothesis
+\citep{fama1970efficient}.
 
-Figure~\ref{fig:dmd}c translates these findings into economic terms.
-A DMD long-short portfolio that mechanically acts on daily predictions over the
-2023--2026 test period accumulates a cumulative return of $-45.4\%$, while a
-simple equal-weight buy-and-hold benchmark gains $+92.0\%$ over the same
-period (annualised Sharpe $= -1.23$).
-The DMD strategy does not merely fail to add value—it systematically destroys
-it, because the slight negative lag-1 autocorrelation means the model learns to
-bet \emph{against} the slight mean-reversion, amplifying losses.
-This is the sharpest possible confirmation that the extracted linear modes
-carry no exploitable predictive content.
-
-
-\subsection{GARCH: Volatility Is Predictable Even When Returns Are Not}
+\subsection{Volatility Is Predictable: GARCH Succeeds Where DMD Fails}
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/fig4_garch.pdf}
-  \caption{\textbf{(a)} GARCH(1,1) conditional volatility estimate alongside realised
-  absolute returns for the S\&P~500.
-  The model closely tracks volatility spikes such as the COVID-19 crash (March 2020)
+  \caption{\textbf{(a)} GARCH(1,1) conditional volatility vs.\ realised
+  absolute returns (S\&P~500). The model tracks the COVID-19 crash (Mar.\ 2020)
   and the 2022 rate-hike sell-off.
-  \textbf{(b)} Normalised RMSE comparison: DMD predicts next-day \emph{returns} worse
-  than the zero baseline (ratio $> 1$), while GARCH predicts next-day \emph{volatility}
-  substantially better than the historical mean baseline (ratio $< 1$).}
+  \textbf{(b)} Normalised RMSE: DMD predicts \emph{returns} worse than the
+  zero baseline (ratio $>1$); GARCH predicts \emph{volatility} substantially
+  better than the historical mean (ratio $<1$).}
   \label{fig:garch}
 \end{figure}
 
-DMD demonstrates that conditional expected returns are indistinguishable from zero.
-A natural follow-up asks whether the \emph{second moment}—conditional variance—is
-equally featureless.
-We fit a GARCH(1,1) model \citep{bollerslev1986generalized} to S\&P~500 daily
-log-returns:
-\begin{equation}
-  r_t = \varepsilon_t \sqrt{h_t}, \qquad
-  h_t = \omega + \alpha\, r_{t-1}^2 + \beta\, h_{t-1},
-\end{equation}
-where $h_t$ is the conditional variance.
-The estimated parameters are $\hat\alpha = 0.158$ and $\hat\beta = 0.804$,
-giving a persistence of $\hat\alpha + \hat\beta = 0.962$—close to unity,
-confirming that volatility shocks are long-lived and that the process is nearly
-integrated in variance.
-Using the one-step-ahead forecast $\hat h_t$ as a volatility predictor,
-the GARCH model achieves a 22.5\% reduction in RMSE relative to using the
-unconditional mean as a baseline (Figure~\ref{fig:garch}b).
+The DMD result establishes that the first moment of returns (expected value) is
+unpredictable.
+We now ask whether the second moment (variance) is equally featureless.
+Fitting GARCH(1,1) to S\&P~500 returns yields $\hat\alpha=0.158$ and
+$\hat\beta=0.804$, giving persistence $\hat\alpha+\hat\beta=0.962$.
+This near-unity persistence means a large volatility shock today still echoes
+strongly tomorrow—volatility is long-lived and therefore forecastable.
+The model achieves a 22.5\% reduction in RMSE on the held-out 2023--2026 period
+relative to predicting the historical mean (Fig.~\ref{fig:garch}b).
 
-This stands in sharp contrast to the DMD result (Figure~\ref{fig:garch}b, left pair):
-predicting returns with DMD is strictly worse than predicting zero change,
-whereas predicting volatility with GARCH is substantially better than predicting
-the historical average.
-The implication is precise: the Efficient Market Hypothesis constrains the
-predictability of \emph{prices} (first moment), not \emph{risk} (second moment).
-
-
-\subsection{Hidden Markov Model: Identifying Volatility Regimes}
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\linewidth]{figures/fig6_hmm.pdf}
-  \caption{\textbf{(a)} S\&P~500 price with HMM-decoded regime background.
-  The Bear regime (red, 21.7\% of days) aligns with the COVID-19 crash
-  and the 2022 rate-hike drawdown.
-  The Neutral regime (grey, 45.2\%) dominates calm trending periods;
-  the Bull regime (green, 33.1\%) captures moderate-volatility recoveries.
-  \textbf{(b)} Return distributions per regime.
-  Mean returns across states are nearly equal, confirming that the states are
-  \emph{volatility} regimes, not return-level regimes.}
-  \label{fig:hmm}
-\end{figure}
-
-We fit a three-state Gaussian Hidden Markov Model \citep{hamilton1989new}
-to the bivariate sequence of daily PC1 returns and a 20-day rolling
-volatility estimate.
-States are relabelled by ascending mean PC1 return as Bear, Neutral, and Bull.
-
-As shown in Figure~\ref{fig:hmm} and Table~\ref{tab:hmm}, the three states differ
-dramatically in return \emph{dispersion} but negligibly in mean return:
-the Bear state has a standard deviation of 2.23\% per day—roughly three times
-that of the Neutral state (0.73\%)—while the mean returns across all three states
-are near-identical ($\approx +0.05\%$).
-This finding directly mirrors the GARCH result: the market's first moment
-(expected return) is regime-invariant, but its second moment (variance) is highly
-regime-dependent and identifiable from past data.
-
-\begin{table}[t]
-  \centering
-  \caption{HMM regime statistics (S\&P~500 daily returns, 2020--2026).}
-  \label{tab:hmm}
-  \begin{tabular}{lrrr}
-    \toprule
-    Regime  & Days & Mean (\%) & Std Dev (\%) \\
-    \midrule
-    Bear    & 344 (21.7\%) & $+0.046$ & 2.231 \\
-    Neutral & 716 (45.2\%) & $+0.069$ & 0.728 \\
-    Bull    & 525 (33.1\%) & $+0.051$ & 1.060 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-The Bear regime concentrates around two historically well-defined events:
-the March 2020 COVID-19 crash and the 2022 rate-hike drawdown (Figure~\ref{fig:hmm}a).
-That the HMM—trained with no date or event labels—recovers these episodes from
-the return signal alone underscores the persistence and distinctiveness of
-high-volatility regimes.
-
-
-\subsection{Portfolio Comparison: What Each Method Is Worth Economically}
+\subsection{Portfolio Comparison: Risk Management Beats Return Prediction}
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/fig7_portfolio.pdf}
-  \caption{Cumulative return of four strategies on the 2023--2026 test period.
-  The DMD long-short portfolio loses $-45.4\%$, confirming that return
-  predictions carry no exploitable signal.
-  The HMM bear-avoidance strategy (cash during Bear states, fully invested
-  otherwise) achieves $+83.4\%$ (Sharpe $1.47$) with slightly lower drawdown
-  than the benchmark.
-  The GARCH volatility-targeting strategy ($\sigma^*=1\%$, leverage capped at
-  $2\times$) reaches $+96.4\%$ (Sharpe $1.44$), modestly outperforming the
-  equal-weight benchmark ($+92.0\%$, Sharpe $1.43$) by scaling up exposure
-  during the calm 2024 bull run.}
+  \caption{Cumulative return of three strategies on the 2023--2026 test period.
+  The DMD long-short portfolio ($-45.4\%$) confirms that return predictions are
+  worthless.
+  The GARCH volatility-targeting strategy ($+96.4\%$, Sharpe $1.44$) outperforms
+  the equal-weight benchmark ($+92.0\%$, Sharpe $1.43$) by scaling up during
+  low-volatility periods.}
   \label{fig:portfolio}
 \end{figure}
 
-Figure~\ref{fig:portfolio} brings all four strategies onto a single axis over
-the 2023--2026 test period.
-The contrast is stark.
-The DMD long-short portfolio ($-45.4\%$) confirms at an economic level what
-the RMSE test showed statistically: predicted return directions are worthless.
-The HMM bear-avoidance strategy ($+83.4\%$, Sharpe $= 1.47$) sits slightly
-\emph{below} the benchmark in total return but with a marginally better
-risk-adjusted ratio: the model correctly flags only 34 Bear days in the test
-period (4.1\%), sitting in cash during brief high-volatility spikes while
-staying invested for the sustained 2024 rally.
-The GARCH volatility-targeting strategy ($+96.4\%$, Sharpe $= 1.44$) achieves
-the highest total return by running at an average leverage of $1.15\times$
-during low-volatility periods: when GARCH predicts calm markets, the model
-borrows to invest more, capturing more of the bull-run upside.
+Figure~\ref{fig:portfolio} brings the statistical findings into economic relief.
+The DMD long-short strategy ($-45.4\%$, Sharpe $=-1.23$) catastrophically
+underperforms the passive benchmark, confirming that DMD return predictions carry
+no exploitable signal.
+The GARCH volatility-targeting strategy ($+96.4\%$, Sharpe $=1.44$) modestly
+outperforms the benchmark ($+92.0\%$, Sharpe $=1.43$) by running at average
+leverage $1.15\times$ during the calm 2024 bull run and reducing exposure during
+high-volatility episodes.
 
-The three outcomes map precisely onto the paper's statistical conclusions.
-Methods that model the \emph{direction} of returns (DMD) produce no value.
-Methods that model \emph{risk}—whether as discrete regimes (HMM) or as a
-continuous variance forecast (GARCH)—translate their predictive accuracy into
-modest but genuine economic improvement.
+\emph{What we learned:} the EMH constrains the predictability of return
+\emph{direction} (first moment), not return \emph{magnitude} (second moment).
+Mathematical methods can manage risk but not manufacture alpha.
 
 
 % ──────────────────────────────────────────────────────────────────────────────
-\section{Discussion and Conclusion}
+\section{Conclusion}
 % ──────────────────────────────────────────────────────────────────────────────
 
-Our analysis resolves what initially appears paradoxical: the market is
-simultaneously low-dimensional and unpredictable.
-The resolution lies in distinguishing two entirely different questions, and then
-refining the second one.
+\emph{So what?}
+We set out to ask whether the U.S.\ equity market is low-dimensional, and whether
+that structure enables prediction.
+The answer is: \emph{yes to the first, no—and yes—to the second, depending on
+what you try to predict.}
 
-\emph{Cross-sectional structure} (how stocks co-move on any given day) is
-low-dimensional, stable, and recoverable: four factors above the random-matrix
-noise floor \citep{laloux1999noise}, a clean block-diagonal correlation matrix,
-and perfect sector recovery from unlabelled returns.
-This structure is the mathematical counterpart of the Fama--French factor model
-\citep{fama1993common}.
+Across stocks, the market is organised into exactly four statistically genuine
+factors that align perfectly with the four economic sectors.
+This structure is stable, interpretable, and recoverable without labels—a
+mathematical counterpart of the Fama--French factor model \citep{fama1993common}.
 
-\emph{Temporal dynamics of returns} are dominated by noise.
-DMD eigenvalues near the origin encode modes with sub-day lifetimes; a trained
-linear predictor performs worse out-of-sample than the naive zero forecast.
-A portfolio that mechanically acts on DMD predictions loses $45.4\%$ over the
-2023--2026 test period while a passive benchmark gains $92.0\%$—confirming that
-no economically exploitable signal survives the training process.
-This is the mathematical signature of the Efficient Market Hypothesis
-\citep{fama1970efficient}: any learnable pattern in prices is immediately traded
-away.
+Over time, return \emph{direction} is not predictable.
+DMD's eigenvalues cluster at the origin rather than on the unit circle, and a
+portfolio trained to exploit its predictions destroys $45.4\%$ of capital while
+the market gains $92.0\%$.
+This is not a failure of the method; it is the mathematical signature of the
+Efficient Market Hypothesis \citep{fama1970efficient}:
+any learnable pattern in prices is immediately arbitraged away.
 
-\emph{Temporal dynamics of volatility} are, however, predictable.
-GARCH(1,1) with persistence 0.962 achieves a 22.5\% reduction in volatility
-forecasting error.
-The HMM independently corroborates this: the three decoded states are pure
-volatility regimes whose mean returns are statistically indistinguishable,
-but whose return dispersions differ by a factor of three.
-The portfolio comparison (Fig.~\ref{fig:portfolio}) confirms this distinction
-economically: an HMM bear-avoidance strategy and a GARCH volatility-targeting
-strategy each achieve a higher Sharpe ratio than the passive benchmark (1.47
-and 1.44 vs.\ 1.43), while the DMD return-prediction strategy loses $-45.4\%$.
-The Efficient Market Hypothesis therefore forbids first-moment predictability,
-not second-moment predictability.
+Return \emph{magnitude}, however, is predictable.
+GARCH captures the persistence of volatility ($\hat\alpha+\hat\beta=0.962$),
+reduces forecasting error by 22.5\%, and enables a volatility-targeting strategy
+that outperforms the benchmark on a risk-adjusted basis.
 
-Taken together, the five analyses provide a coherent, multi-angle characterisation:
-the market is genuinely low-dimensional across stocks (SVD, MDS, Spectral Clustering),
-genuinely unpredictable in expected returns (DMD), yet genuinely structured in risk
-(GARCH, HMM).
+For practitioners, the lesson is precise: invest in risk management
+infrastructure, not in return-prediction algorithms.
+For theorists, the result is clean: the Efficient Market Hypothesis forbids
+first-moment predictability, not second-moment predictability—and the spectral
+tools of this course expose that boundary with mathematical clarity.
 
 \bibliographystyle{splncs04}
 \bibliography{reference}
