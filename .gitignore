@@ -1,0 +1,21 @@
+# LaTeX auxiliaries
+*.aux
+*.log
+*.bbl
+*.blg
+*.out
+*.toc
+*.synctex.gz
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+
+# Large files
+Final_Project_Guideline.pdf
+MATH___BIOINF_547__Final_Project.pdf
