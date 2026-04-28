@@ -42,7 +42,9 @@
 \maketitle
 
 \begin{abstract}
-The U.S.\ equity market is a highly complex dynamical system, remaining a notorious challenge to predict. To uncover the hidden order beneath this apparent randomness, we apply data-driven linear-algebraic methods to understand its underlying mathematical structure. We find that the daily return data can be effectively described by four latent vectors using Singular Value Decomposition. This low-dimensional geometry is confirmed by classical Multidimensional Scaling, which maps the stock correlation into four clusters indicating the industry sectors. We attempted to forecast future returns and volatility. While Dynamic Mode Decomposition fails to forecast future directional returns—since any temporal modes decay within a single trading day—the Generalized Autoregressive Conditional Heteroskedasticity model successfully predicts the volatility. This confirms the Efficient Market Hypothesis: short-term arbitrage opportunities fade out immediately, making directional returns unpredictable, while variance remains predictable due to its distinct structural persistence.
+The U.S.\ equity market is a highly complex dynamical system, and remains a notorious challenge to predict. To uncover the hidden order beneath this apparent randomness, we apply data-driven methods to understand its underlying mathematical structure. We find that the daily return data can be effectively described by four latent vectors using Singular Value Decomposition. This low-dimensional geometry is confirmed by classical Multidimensional Scaling, which maps the stock correlation into four clusters indicating the industry sectors. We attempted to forecast future returns and volatility. 
+While Dynamic Mode Decomposition fails to forecast future directional returns, the Generalized Autoregressive Conditional Heteroskedasticity model successfully predicts the volatility.
+This confirms the Efficient Market Hypothesis: short-term arbitrage opportunities fade out immediately, making directional returns unpredictable, while variance remains predictable due to its distinct structural persistence.
 \end{abstract}
 
 % ──────────────────────────────────────────────────────────────────────────────
@@ -52,10 +54,10 @@ The U.S.\ equity market is a highly complex dynamical system, remaining a notori
 
 The U.S.\ equity market, representing tens of trillions of dollars in market capitalization, is one of the most intensively studied dynamical systems in the world. Despite the immense computational resources dedicated to forecasting asset prices, the market remains famously difficult to predict. This phenomenon is classically formalized by the Efficient Market Hypothesis (EMH) \citep{fama1970efficient}, which posits that asset prices fully reflect all available information, rendering future price movements essentially random.
 
-While this temporal unpredictability might suggest a complex, high-dimensional system, practitioners have long observed a phenomenon: individual stocks frequently co-move with the broader market. When macroeconomic shocks occur, equities tend to rise or fall together regardless of their individual corporate fundamentals. This systemic co-movement raises a precise mathematical question: how many independent directions of variation does the equity return matrix truly possess? 
-If this underlying dimensionality is small, can we model the market using data-driven linear algebra and generate profitable trading strategies? 
+While this temporal unpredictability might suggest a complex, high-dimensional system, practitioners have long observed a phenomenon: individual stocks frequently co-move with the broader market. When macroeconomic shocks occur, equities tend to rise or fall together regardless of their individual corporate fundamentals. This systemic co-movement raises a precise mathematical question: how many independent directions of variation does the equity return matrix truly possess?
+If this underlying dimensionality is small, can we model the market's return and volatility using data-driven methods?
 
-In this report, we analyze the daily returns of 20 stocks from January 2, 2020, to April 24, 2026. We show that $\sim 75\%$ of the market information can be represented by four principal components using Singular Value Decomposition (SVD). The empirical correlation matrix shows high correlation for stocks in the same sector and restores their sector groupings using Multidimensional Scaling (MDS). 
+In this study, we analyze the daily returns of 20 stocks from January 2, 2020, to April 24, 2026. We show that $\sim 75\%$ of the market information can be represented by four principal components using Singular Value Decomposition (SVD). The empirical correlation matrix shows high correlation for stocks in the same sector and restores their sector groupings using Multidimensional Scaling (MDS).
 In addition, we apply Dynamic Mode Decomposition (DMD) to predict future return directions with only 50.4\% accuracy, which reveals the temporal unpredictability of the stock market. Conversely, the Generalized Autoregressive Conditional Heteroskedasticity (GARCH) model successfully predicts volatility clustering, tracking periods of high market turbulence with a 15.8\% root mean square error (RMSE) improvement over a constant-volatility baseline.
 
 The remainder of this paper is structured as follows: Section~\ref{sec:methods} details our dataset and mathematical methodologies; Section~\ref{sec:results} presents the structural and predictive results; Section~\ref{sec:discussion} discusses the limitations of linear modeling in finance; and Section~\ref{sec:conclusion} concludes.
@@ -66,26 +68,26 @@ The remainder of this paper is structured as follows: Section~\ref{sec:methods} 
 
 We use daily adjusted closing prices for 20 large-cap U.S.\ stocks, evenly distributed across four distinct sectors: Technology (AAPL, MSFT, GOOGL, AMZN, META), Finance (JPM, BAC, GS, MS, C), Healthcare (JNJ, UNH, PFE, MRK, ABBV), and Energy (XOM, CVX, COP, SLB, EOG). The period spans 1,005 trading days, from January 2, 2020, to April 24, 2026. The data was sourced from Yahoo Finance \citep{yahoo_finance}.
 
-To conduct a rigorous evaluation, we employ two distinct data paradigms. For the descriptive structural analysis (SVD and MDS), we utilize the full dataset to comprehensively map the historical geometry of the market. 
-Then, for the predictive models (DMD and GARCH), we strictly partition the data into a training set (2020--2023) and a test set (2024--2026).
+To conduct a rigorous evaluation, we first analyze the data structure and correlation using SVD and MDS.
+Then, we partition the data into a training set (2020--2023) and a test set (2024--2026) to test the predictability of return and volatility using DMD and GARCH respectively.
 
 \subsection{Pre-processing}
-To better normalize the temporal variance and prevent scaling biases, we first transform the data into a daily percentage return $r_{i,t} = (P_{i,t} - P_{i,t-1})/P_{i,t-1}$ for stock $i$ on day $t$, where $P_{i,t}$ is the closing price. 
+To better normalize the temporal variance and prevent scaling biases, we first transform the data into a daily percentage return $r_{i,t} = (P_{i,t} - P_{i,t-1})/P_{i,t-1}$ for stock $i$ on day $t$, where $P_{i,t}$ is the closing price.
 To ensure that high-volatility stocks do not dominate the variance in our linear models, we standardize each stock's return series to have a mean of zero and a standard deviation of one. This yields our final data matrix $\mathbf{X} \in \mathbb{R}^{n \times m}$ where $n = 1{,}004$ (number of days) and $m = 20$ (number of stocks).
 
-\subsection{Matrix Decomposition and Geometric Relationship}
-To understand the underlying structure of the data, we compute the SVD of the standardized return matrix, $\mathbf{X} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^\top$, where $\mathbf{U}$ is the matrix of left singular vectors, $\boldsymbol{\Sigma} = \text{diag}(\sigma_1, \dots, \sigma_m)$ is the diagonal matrix of singular values, and $\mathbf{V}^\top$ is the matrix of right singular vectors. 
+\subsection{Feature extraction and correlation}
+To understand the underlying structure of the data, we compute the SVD of the standardized return matrix, $\mathbf{X} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^\top$, where $\mathbf{U}$ is the matrix of left singular vectors, $\boldsymbol{\Sigma} = \text{diag}(\sigma_1, \dots, \sigma_m)$ is the diagonal matrix of singular values, and $\mathbf{V}^\top$ is the matrix of right singular vectors.
 
-To distinguish genuine macroeconomic factors from finite-sample covariance noise, we apply the Mar\v{c}enko--Pastur (MP) law \citep{marchenko1967distribution, laloux1999noise}. For an $i.i.d.$ Gaussian noise matrix with aspect ratio $q = m/n$, the maximum expected noise eigenvalue is given by $\lambda_{+} = (1 + \sqrt{q})^2$. Any eigenvalue $\lambda_i = \sigma_i^2 / n$ that exceeds this threshold is considered a statistically genuine structural signal. 
+To distinguish genuine macroeconomic factors from finite-sample covariance noise, we apply the Mar\v{c}enko--Pastur (MP) law \citep{marchenko1967distribution, laloux1999noise}. For an i.i.d.\ Gaussian noise matrix with aspect ratio $q = m/n$, the maximum expected noise eigenvalue is given by $\lambda_{+} = (1 + \sqrt{q})^2$. Any eigenvalue $\lambda_i = \sigma_i^2 / n$ that exceeds this threshold is considered a statistically genuine structural signal.
 
-To investigate the correlation and geometric relationships of different stocks, we compute the Pearson correlation matrix $\mathbf{C}$:
+To investigate the correlation and geometric relationships of different stocks, we compute the correlation matrix $\mathbf{C}$:
 \begin{equation}
     c_{ij} = \frac{1}{n-1} \sum_{t=1}^n X_{i,t} X_{j,t}.
-\end{equation} 
-We convert $c_{ij}$ into a squared distance matrix defined as $d^2_{ij} = 2(1-c_{ij})$, where perfectly correlated stocks have a distance of 0, and perfectly anti-correlated stocks have a distance of 2. Finally, we apply classical MDS \citep{torgerson1952multidimensional} to this distance matrix to extract a 2-D embedding to study the geometric relation.
+\end{equation}
+We convert $c_{ij}$ into a squared distance matrix defined as $d^2_{ij} = 2(1-c_{ij})$, where perfectly correlated stocks have a distance of 0, and perfectly anti-correlated stocks have a distance of 2. Finally, we apply classical MDS \citep{torgerson1952multidimensional} to this distance matrix to extract a 2-D embedding to study the geometric relationships.
 
 \subsection{Price Modeling via DMD}
-To forecast the market, we utilize DMD. Let $\mathbf{x}_t \in \mathbb{R}^m$ represent the column state vector containing the returns of all $m$ stocks on day $t$. We attempt to model the temporal evolution of the market as a discrete-time linear dynamical system $\mathbf{x}_{t+1} = \mathbf{A}\mathbf{x}_t$. To compute this over the training dataset, we aggregate these state vectors into two offset snapshot matrices: $\mathbf{X}_1 = [\mathbf{x}_1, \dots, \mathbf{x}_{n-1}]$ and $\mathbf{X}_2 = [\mathbf{x}_2, \dots, \mathbf{x}_n]$. 
+To forecast the market, we utilize DMD. Let $\mathbf{x}_t \in \mathbb{R}^m$ represent the column state vector containing the returns of all $m$ stocks on day $t$. We attempt to model the temporal evolution of the market as a discrete-time linear dynamical system $\mathbf{x}_{t+1} = \mathbf{A}\mathbf{x}_t$. To compute this over the training dataset, we aggregate these state vectors into two offset snapshot matrices: $\mathbf{X}_1 = [\mathbf{x}_1, \dots, \mathbf{x}_{n-1}]$ and $\mathbf{X}_2 = [\mathbf{x}_2, \dots, \mathbf{x}_n]$.
 
 The operator $\mathbf{A} \approx \mathbf{X}_2 \mathbf{X}_1^\dagger$, where $^\dagger$ denotes the Moore-Penrose pseudoinverse. To compute this robustly, we use a truncated SVD of the first snapshot matrix, retaining only the leading $r$ singular values to filter out noise and improve numerical stability. Following the DMD algorithm \citep{kutz2016dynamic}, we extract the DMD modes $\mathbf{\Phi}$ and the diagonal matrix of system eigenvalues $\mathbf{\Lambda} = \text{diag}(\lambda_1, \dots, \lambda_r)$. The one-step ahead forecast can then be generated as:
 \begin{equation}
@@ -109,14 +111,13 @@ where $\omega$, $\alpha$, and $\beta$ are parameters fitted via maximum likeliho
 \begin{figure}[ht]
   \centering
   \includegraphics[width=\linewidth]{figures/fig1_svd.pdf}
-  \caption{Singular Value Decomposition results. \textbf{(a)} Scree plot of individual and cumulative variance. Only 4 eigenvalues are larger than the Marchenko--Pastur upper bound $\lambda_+=1.24$ (dotted line). \textbf{(b)} Stock loadings on Principal Component 1 vs.\ Principal Component 2, colored by sector. All stocks form a cluster by their sector.}
+  \caption{Singular Value Decomposition results. \textbf{(a)} Scree plot of individual and cumulative variance. Only 4 eigenvalues are larger than the Marchenko--Pastur upper bound $\lambda_+=1.24$ (dotted line). \textbf{(b)} Stocks plotted using Principal Component 1 and 2, colored by sector. All stocks form a cluster by their sector.}
   \label{fig:svd}
 \end{figure}
 
 Applying SVD to dataset $\mathbf{X}$ reveals a highly compressed representation of the market. Figure~\ref{fig:svd}a shows the scree plot of normalized singular values. Principal Component (PC) 1 alone captures 44.6\% of the total variance, recognized universally as the general ``market factor.'' This interpretation is supported by the Pearson correlation between the PC1 score time series $\mathbf{u}_1 = \mathbf{X}\mathbf{v}_1$ and the S\&P~500 daily returns, which yields $r=0.88$.
-Moreover, the MP bound ($\lambda_+ \approx 1.24$) is exceeded by exactly four eigenvalues, which jointly explain 74.6\% of the variance. This confirms that the 20-dimensional return space can be mathematically compressed into just four latent factors.
-
-As seen in Figure~\ref{fig:svd}b, all 20 stocks in the 2D mapping group into four clusters representing their macroeconomic sectors. PC2 provides a fascinating economic dichotomy, acting as a separator between growth and value equities. The Technology sector clusters high on the PC2 axis, while Energy and Finance cluster lower.
+Moreover, the MP bound ($\lambda_+ \approx 1.24$) is exceeded by four eigenvalues, which jointly explain 74.6\% of the variance. This confirms that the dataset $\mathbf{X}$ can be effectively expressed by four latent factors.
+On the other hand, in Figure~\ref{fig:svd}b, all 20 stocks in the 2D mapping group into four clusters representing their macroeconomic sectors. PC2 acts as a separator between growth and value equities; the Technology sector clusters high on the PC2 axis, while Energy and Finance cluster lower, providing clear economic meaning.
 
 \begin{figure}[h]
   \centering
@@ -125,22 +126,22 @@ As seen in Figure~\ref{fig:svd}b, all 20 stocks in the 2D mapping group into fou
   \label{fig:structure}
 \end{figure}
 
-This geometric relationship is also validated using MDS. Figure~\ref{fig:structure}a displays the 2-D MDS embedding based on the correlation distance $d_{ij}$, cleanly separating the four sectors. 
-The distinct geometrical separation of these sectors is supported by Figure~\ref{fig:structure}b, where the sector-sorted correlation matrix displays a pronounced block-diagonal structure, indicating strong intra-sector co-movement. 
+This geometric relationship is also validated using MDS. Figure~\ref{fig:structure}a displays the 2-D MDS embedding based on the correlation distance $d_{ij}$, cleanly separating the four sectors.
+The distinct geometrical separation of these sectors is supported by Figure~\ref{fig:structure}b, where the sector-sorted correlation matrix displays a pronounced block-diagonal structure, indicating strong intra-sector co-movement.
 
 \subsection{Predicting Next-Day Returns and Volatility}
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=\linewidth]{figures/fig3_dmd.pdf}
-  \caption{\textbf{(a)} Dynamic Mode Decomposition (DMD) eigenvalue spectrum on the complex plane. All eigenvalues lie strictly inside the unit circle, confirming every dynamic mode decays within a single trading day. \textbf{(b)} Representative two-month window (Jun--Jul 2024) of GOOGL daily returns: bars show actual returns (green $=$ up, red $=$ down) and background shading shows DMD direction predictions at the best-performing rank ($r=18$). The overall direction accuracy across the full 2024--2026 test period is 48.5\%.}
+  \caption{\textbf{(a)} Dynamic Mode Decomposition (DMD) eigenvalue spectrum on the complex plane. All eigenvalues lie strictly inside the unit circle, confirming every dynamic mode decays within a single trading day. \textbf{(b)} Representative two-month window (Jun--Jul 2024) of GOOGL daily returns: bars show actual returns (green $=$ up, red $=$ down) and background shading shows DMD direction predictions at the best-performing rank ($r=18$), yielding a direction accuracy of 48.5\%.}
   \label{fig:dmd}
 \end{figure}
 
-While the cross-sectional data exhibits clear low-dimensional patterns, the temporal dynamics are dominated by noise. Figure~\ref{fig:dmd}a shows the resulting eigenvalue spectrum of the full-rank DMD operator. 
+While the cross-sectional data exhibits clear low-dimensional patterns, the temporal dynamics are dominated by noise. Figure~\ref{fig:dmd}a shows the resulting eigenvalue spectrum of the full-rank DMD operator.
 All eigenvalues lie strictly inside the unit circle near the origin, with a mean of $|\lambda|=0.106$ and a max of $|\lambda|=0.252$. There are no persistent periodic oscillations in equity returns; every dynamic mode decays within a single trading day.
 
-To quantify predictive skill directly, we sweep ranks $r=1,\ldots,20$ and select the rank maximizing overall direction accuracy (the fraction of correct sign predictions across all 20 stocks on the test set). The best rank is $r=18$, yet it achieves only $50.4\%$ direction accuracy---statistically indistinguishable from a fair coin. Figure~\ref{fig:dmd}b shows a representative two-month window (Jun--Jul~2024) for GOOGL. The DMD shading (predicted direction) frequently disagrees with the actual return bars (realized direction); this pattern is consistent across the full test period, yielding an overall direction accuracy of only $48.5\%$.
+To quantify predictive skill directly, we sweep ranks $r=1,\ldots,20$ and select the rank maximizing overall direction accuracy (the fraction of correct sign predictions across all 20 stocks on the test set). The best rank is $r=18$, yet it achieves only $50.4\%$ direction accuracy---statistically indistinguishable from a fair coin. Figure~\ref{fig:dmd}b shows a representative two-month window (Jun--Jul~2024) for GOOGL. The DMD shading (predicted direction) frequently disagrees with the actual return bars (realized direction), yielding a direction accuracy of $48.5\%$; this pattern is consistent across the full test period.
 
 \begin{figure}[ht]
   \centering
@@ -149,25 +150,27 @@ To quantify predictive skill directly, we sweep ranks $r=1,\ldots,20$ and select
   \label{fig:garch}
 \end{figure}
 
-Although the directional returns are dominated by noise, the magnitude of those returns is highly structured. Figure~\ref{fig:garch}b shows the autocorrelation function of squared S\&P~500 returns $r_t^2$. Nearly all lags up to 30 trading days exceed the 95\% confidence band, confirming statistically significant volatility clustering: large moves beget large moves. This autocorrelation structure indicates that market turbulence acts much like ripples in a pond---a major price shock creates a lingering state of panic or excitement that takes weeks to fully fade out. This is exactly what GARCH(1,1) exploits; the model equation $\hat{\sigma}_t^2 = \omega + \alpha r_{t-1}^2 + \beta \hat{\sigma}_{t-1}^2$ acts as a first-order autoregressive (AR(1)) process on $r_t^2$, making it a mathematically principled fit to this empirical ripple effect. 
-
-The trained GARCH(1,1) model yields fitted parameters $\hat{\alpha}=0.175$ and $\hat{\beta}=0.795$, with a persistence of $\hat{\alpha}+\hat{\beta}=0.970$. A value near 1 implies that once a major market shock occurs, the resulting high-volatility environment decays very slowly. Figure~\ref{fig:garch}a confirms this out-of-sample: the GARCH forecast reliably tracks the COVID crash, the 2022 bear market, and the 2025 tariff shock, achieving a 15.8\% RMSE improvement over a constant-volatility baseline on the 2024--2026 test set.
+Although the directional returns are dominated by noise, the magnitude of those returns is highly structured.
+The trained GARCH(1,1) model yields fitted parameters $\hat{\alpha}=0.175$ and $\hat{\beta}=0.795$, with a persistence of $\hat{\alpha}+\hat{\beta}=0.970$. A value near 1 implies that once a major market shock occurs, the resulting high-volatility environment decays very slowly. Figure~\ref{fig:garch}a shows the GARCH forecast reliably tracking the COVID crash, the 2022 bear market, and the 2025 tariff shock, achieving a 15.8\% RMSE improvement over a constant-volatility baseline on the 2024--2026 test set.
+Figure~\ref{fig:garch}b shows the autocorrelation function of squared S\&P~500 returns $r_t^2$. Nearly all lags up to 30 trading days exceed the 95\% confidence band, confirming statistically significant volatility clustering: large moves beget large moves.
+This autocorrelation structure indicates that market turbulence acts much like ripples in a pond---a major price shock creates a lingering state of panic or excitement that takes weeks to fully fade out.
+This is what GARCH(1,1) exploits; the model equation $\hat{\sigma}_t^2 = \omega + \alpha r_{t-1}^2 + \beta \hat{\sigma}_{t-1}^2$ acts as a first-order autoregressive process on $r_t^2$, making it a mathematically principled fit to this empirical ripple effect.
 
 % ──────────────────────────────────────────────────────────────────────────────
 \section{Discussion and Limitations}
 \label{sec:discussion}
 % ──────────────────────────────────────────────────────────────────────────────
-While our results provide an elegant validation of market structure, several limitations must be noted. First, DMD inherently assumes a linear evolution of the state vector. Financial markets are known to exhibit severe nonlinear dynamics, particularly during structural volatility shocks. 
-Second, the analyzed period was highly anomalous, encompassing the COVID-19 crash, unprecedented monetary easing, and the subsequent inflationary cycle. This macro regime forced high correlations across all asset classes, likely artificially strengthening the dominance of PC1 compared to periods of macroeconomic calm. 
+While our results provide an elegant validation of market structure, several limitations must be noted. First, DMD inherently assumes a linear evolution of the state vector. Financial markets are known to exhibit severe nonlinear dynamics, particularly during structural volatility shocks.
+Second, the analyzed period was highly anomalous, encompassing the COVID-19 crash, unprecedented monetary easing, and the subsequent inflationary cycle. This macro regime forced high correlations across all asset classes, likely artificially strengthening the dominance of PC1 compared to periods of macroeconomic calm.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-Our analysis confirms that the market is heavily structured and low-dimensional, revealing clear relationships among stocks within the same sector. However, across time, the system behaves completely differently. Market dynamics lack the persistent temporal modes necessary for directional prediction, confirming that while the market is structurally organized today, its directional movements are fundamentally random tomorrow. Conversely, volatility exhibits strong predictability, perfectly aligning with the economic principles of arbitrage.
+Our analysis confirms that the market is heavily structured and low-dimensional, revealing clear relationships among stocks within the same sector. However, across time, the system behaves completely differently. Market dynamics lack the persistent temporal modes necessary for directional prediction using linear methods, confirming that while the market is structurally organized today, its directional movements are fundamentally random tomorrow. Conversely, volatility exhibits strong predictability, perfectly aligning with the economic principles of arbitrage.
 
 \begingroup
 \let\clearpage\relax
-\vspace{2em} 
+\vspace{2em}
 \bibliographystyle{unsrtnat}
 \bibliography{reference}
 \endgroup
